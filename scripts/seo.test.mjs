@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { readdir, readFile, access } from 'node:fs/promises'
 import test from 'node:test'
+import { parse } from 'yaml'
 
 const origin = 'https://docs.fenno.ai'
 const root = new URL('../', import.meta.url)
@@ -36,13 +37,34 @@ async function sources(path = 'content') {
   ).flat()
 }
 const paths = await sources()
-const routes = paths.map(
-  (path) =>
-    `/${path
-      .slice('content/'.length)
-      .replace(/\.mdx$/, '')
-      .replace(/(?:^|\/)index$/, '')}/`
+const metadata = new Map(
+  await Promise.all(
+    paths.map(async (path) => {
+      const source = await read(path)
+      const frontMatter = source.match(/^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/)?.[1]
+      const route = `/${path
+        .slice('content/'.length)
+        .replace(/\.mdx$/, '')
+        .replace(/(?:^|\/)index$/, '')}/`
+      return [route, parse(frontMatter || '') || {}]
+    })
+  )
 )
+const routes = [...metadata.keys()]
+const indexedRoutes = routes.filter((route) => metadata.get(route).noindex !== true)
+function expectedAlternates(route) {
+  const languages = {}
+  for (const [locale, language] of [
+    ['en', 'en'],
+    ['zh', 'zh-CN']
+  ]) {
+    const translation = route.replace(/^\/(en|zh)\//, `/${locale}/`)
+    if (indexedRoutes.includes(translation)) languages[language] = origin + translation
+  }
+  const fallback = languages.en || languages['zh-CN']
+  if (fallback) languages['x-default'] = fallback
+  return languages
+}
 const pages = new Map(
   await Promise.all(routes.map(async (route) => [route, await read(`out${route}index.html`)]))
 )
@@ -76,7 +98,11 @@ for (const [route, html] of pages) {
     assert.equal(meta.find((tag) => tag.name === 'twitter:card')?.content, 'summary_large_image')
     assert.equal(meta.find((tag) => tag.name === 'twitter:site')?.content, '@Fennoai')
     assert.equal(meta.find((tag) => tag.property === 'og:image')?.content, `${origin}/og/docs.png`)
-    assert.equal(meta.find((tag) => tag.name === 'robots')?.content, 'index, follow')
+    const noindex = metadata.get(route).noindex === true
+    assert.equal(
+      meta.find((tag) => tag.name === 'robots')?.content,
+      noindex ? 'noindex, follow' : 'index, follow'
+    )
     const locale = route.split('/')[1]
     assert.equal(tags(html, 'html')[0].lang, locale)
     const en = route.replace(/^\/(en|zh)\//, '/en/')
@@ -84,13 +110,9 @@ for (const [route, html] of pages) {
     const alternates = Object.fromEntries(
       links.filter((tag) => tag.rel === 'alternate').map((tag) => [tag.hreflang, tag.href])
     )
-    assert.deepEqual(alternates, {
-      en: origin + en,
-      'zh-CN': origin + zh,
-      'x-default': origin + en
-    })
+    assert.deepEqual(alternates, expectedAlternates(route))
     assert.ok(pages.has(en) && pages.has(zh))
-    assert.equal(locations.filter((loc) => loc === url).length, 1)
+    assert.equal(locations.filter((loc) => loc === url).length, noindex ? 0 : 1)
     assert.equal((html.match(/<h1\b/g) || []).length, 1)
     const json = html.match(/<script type="application\/ld\+json">([^<]+)<\/script>/)?.[1]
     assert.ok(json, 'JSON-LD must be rendered without JavaScript execution')
@@ -110,9 +132,9 @@ for (const [route, html] of pages) {
   })
 }
 
-test('sitemap exactly matches the published MDX routes, with reciprocal translations', () => {
-  assert.deepEqual(new Set(locations), new Set(routes.map((route) => origin + route)))
-  assert.equal(locations.length, routes.length)
+test('sitemap exactly matches the indexed MDX routes, with reciprocal translations', () => {
+  assert.deepEqual(new Set(locations), new Set(indexedRoutes.map((route) => origin + route)))
+  assert.equal(locations.length, indexedRoutes.length)
   for (const [, value] of sitemap.matchAll(/<lastmod>([^<]+)<\/lastmod>/g)) {
     assert.match(
       value,
@@ -122,9 +144,10 @@ test('sitemap exactly matches the published MDX routes, with reciprocal translat
   }
   for (const [, node] of sitemap.matchAll(/<url>([\s\S]*?)<\/url>/g)) {
     const links = tags(node, 'xhtml:link')
+    const url = decode(node.match(/<loc>([^<]+)<\/loc>/)[1])
     assert.deepEqual(
-      new Set(links.map((link) => link.hreflang)),
-      new Set(['en', 'zh-CN', 'x-default'])
+      Object.fromEntries(links.map((link) => [link.hreflang, link.href])),
+      expectedAlternates(new URL(url).pathname)
     )
     assert.ok(links.every((link) => locations.includes(link.href)))
   }

@@ -6,12 +6,39 @@ Complete guide to creating documentation with Nextra, the Next.js-based document
 
 ### New Project
 
+These examples target Nextra **4.6.1**, Next.js **16.0.7**, React **19.x** and the
+App Router. The repository uses compatible dependency ranges; keep these versions
+explicit when reproducing this setup.
+
 ```bash
-# Create a Next.js app, then add Nextra
-bun create next-app docs
+# Create an App Router project, then add Nextra
+bunx create-next-app@16.0.7 docs --ts --app --no-src-dir --no-tailwind --use-bun
 cd docs
-bun add nextra nextra-theme-docs
+bun add next@16.0.7 nextra@4.6.1 nextra-theme-docs@4.6.1
+bun add --dev pagefind
 ```
+
+Remove the generated `app/page.tsx` so the optional catch-all route below can
+serve `content/index.mdx` at `/`. Replace the generated layout with the docs layout.
+Set these fields in `package.json`, then run `bun install`:
+
+```json
+{
+  "scripts": {
+    "dev": "next dev --webpack",
+    "build": "next build --webpack",
+    "postbuild": "pagefind --site .next/server/app --output-path public/_pagefind",
+    "start": "next start"
+  },
+  "overrides": {
+    "zod": "4.1.12"
+  }
+}
+```
+
+Nextra 4.6.1 uses Webpack with Next.js 16. The Zod override keeps the docs theme's
+Layout validation compatible with Nextra 4.6.1, as in this repository's
+`pnpm-workspace.yaml`.
 
 ### Next.js Configuration
 
@@ -20,8 +47,6 @@ bun add nextra nextra-theme-docs
 import nextra from 'nextra'
 
 const withNextra = nextra({
-  theme: 'nextra-theme-docs',
-  themeConfig: './theme.config.tsx',
   defaultShowCopyCode: true,
   staticImage: true
 })
@@ -31,70 +56,118 @@ export default withNextra({
 })
 ```
 
-### Theme Configuration
+### Theme Layout
+
+Theme components and options belong in the App Router layout. Nextra 4 does not
+use `theme`, `themeConfig` or `theme.config.tsx`.
 
 ```tsx
-// theme.config.tsx
-import { DocsThemeConfig } from 'nextra-theme-docs'
+// app/layout.tsx
+import type { Metadata } from 'next'
+import type { ReactNode } from 'react'
+import { Footer, Layout, Navbar } from 'nextra-theme-docs'
+import { Head } from 'nextra/components'
+import { getPageMap } from 'nextra/page-map'
+import 'nextra-theme-docs/style.css'
+import './globals.css'
 
-const config: DocsThemeConfig = {
-  logo: <span>Project Name</span>,
-  project: {
-    link: 'https://github.com/org/project'
-  },
-  docsRepositoryBase: 'https://github.com/org/project/tree/main/docs',
-  footer: {
-    text: '© 2024 Project Name. All rights reserved.'
-  },
-  useNextSeoProps() {
-    return {
-      titleTemplate: '%s - Project Docs'
-    }
-  },
-  head: (
-    <>
-      <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-      <meta name="description" content="Project documentation" />
-    </>
-  ),
-  primaryHue: 200,
-  sidebar: {
-    defaultMenuCollapseLevel: 1,
-    toggleButton: true
-  },
-  toc: {
-    float: true,
-    title: 'On This Page'
-  },
-  feedback: {
-    content: 'Question? Give us feedback →',
-    labels: 'feedback'
-  },
-  editLink: {
-    text: 'Edit this page on GitHub →'
-  },
-  navigation: {
-    prev: true,
-    next: true
-  }
+export const metadata: Metadata = {
+  title: { default: 'Project Docs', template: '%s - Project Docs' },
+  description: 'Project documentation'
 }
 
-export default config
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  return (
+    <html lang="en" dir="ltr" suppressHydrationWarning>
+      <Head color={{ hue: 200 }} />
+      <body>
+        <Layout
+          navbar={
+            <Navbar logo={<span>Project Name</span>} projectLink="https://github.com/org/project" />
+          }
+          pageMap={await getPageMap()}
+          docsRepositoryBase="https://github.com/org/project/tree/main/docs"
+          footer={<Footer>© Project Name. All rights reserved.</Footer>}
+          sidebar={{ defaultMenuCollapseLevel: 1 }}
+          toc={{ title: 'On This Page' }}
+          feedback={{ content: 'Question? Give us feedback →', labels: 'feedback' }}
+          editLink="Edit this page on GitHub →"
+        >
+          {children}
+        </Layout>
+      </body>
+    </html>
+  )
+}
+```
+
+### MDX Components
+
+```tsx
+// mdx-components.tsx
+import { useMDXComponents as getDocsMDXComponents } from 'nextra-theme-docs'
+import type { UseMDXComponents } from 'nextra/mdx-components'
+
+const docsComponents = getDocsMDXComponents()
+
+export const useMDXComponents: UseMDXComponents<typeof docsComponents> = <T,>(components?: T) => ({
+  ...docsComponents,
+  ...components
+})
+```
+
+### Content Routes
+
+```tsx
+// app/[[...mdxPath]]/page.tsx
+import { generateStaticParamsFor, importPage } from 'nextra/pages'
+import { useMDXComponents as getMDXComponents } from '../../mdx-components'
+
+export const generateStaticParams = generateStaticParamsFor('mdxPath')
+
+type Props = { params: Promise<{ mdxPath?: string[] }> }
+
+export async function generateMetadata({ params }: Props) {
+  const { mdxPath } = await params
+  const { metadata } = await importPage(mdxPath)
+  return metadata
+}
+
+const Wrapper = getMDXComponents().wrapper
+
+export default async function Page({ params }: Props) {
+  const resolvedParams = await params
+  const {
+    default: MDXContent,
+    toc,
+    metadata,
+    sourceCode
+  } = await importPage(resolvedParams.mdxPath)
+  return (
+    <Wrapper toc={toc} metadata={metadata} sourceCode={sourceCode}>
+      <MDXContent params={resolvedParams} />
+    </Wrapper>
+  )
+}
 ```
 
 ## Project Structure
 
 ```
 docs/
-├── pages/
-│   ├── _meta.json              # Root navigation
-│   ├── _app.tsx                # Custom App (optional)
-│   ├── index.mdx               # Home page (/)
-│   ├── getting-started.mdx     # /getting-started
+├── app/
+│   ├── layout.tsx             # Docs theme layout and global metadata
+│   ├── globals.css
+│   └── [[...mdxPath]]/
+│       └── page.tsx           # Render content routes
+├── content/
+│   ├── _meta.json             # Root navigation
+│   ├── index.mdx              # Home page (/)
+│   ├── getting-started.mdx    # /getting-started
 │   ├── concepts/
-│   │   ├── _meta.json          # Folder navigation
-│   │   ├── index.mdx           # /concepts
-│   │   └── architecture.mdx    # /concepts/architecture
+│   │   ├── _meta.json         # Folder navigation
+│   │   ├── index.mdx          # /concepts
+│   │   └── architecture.mdx   # /concepts/architecture
 │   ├── api/
 │   │   ├── _meta.json
 │   │   ├── index.mdx
@@ -104,9 +177,9 @@ docs/
 │       └── quickstart.mdx
 ├── public/
 │   └── images/
-├── components/                  # Custom components
+├── components/
 │   └── CustomCard.tsx
-├── theme.config.tsx
+├── mdx-components.tsx
 ├── next.config.mjs
 ├── tsconfig.json
 └── package.json
@@ -170,13 +243,15 @@ docs/
 
 ### Navigation Item Types
 
-| Type          | Description            |
-| ------------- | ---------------------- |
-| `page`        | Standard page          |
-| `menu`        | Dropdown menu          |
-| `separator`   | Visual divider         |
-| External link | Use `href` property    |
-| `hidden`      | Hidden from navigation |
+| Type          | Description         |
+| ------------- | ------------------- |
+| `page`        | Standard page       |
+| `menu`        | Dropdown menu       |
+| `separator`   | Visual divider      |
+| External link | Use `href` property |
+
+To hide a route from navigation, set `"display": "hidden"` on the item, as in
+the `changelog` example above. Its `type` remains `"page"`.
 
 ## MDX Syntax
 
@@ -293,10 +368,34 @@ import { Callout } from 'nextra/components'
 import { Tabs } from 'nextra/components'
 
 <Tabs items={['npm', 'yarn', 'pnpm', 'bun']}>
-  <Tabs.Tab>```bash npm install package-name ```</Tabs.Tab>
-  <Tabs.Tab>```bash yarn add package-name ```</Tabs.Tab>
-  <Tabs.Tab>```bash pnpm add package-name ```</Tabs.Tab>
-  <Tabs.Tab>```bash bun add package-name ```</Tabs.Tab>
+  <Tabs.Tab>
+
+```bash
+npm install package-name
+```
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+
+```bash
+yarn add package-name
+```
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+
+```bash
+pnpm add package-name
+```
+
+  </Tabs.Tab>
+  <Tabs.Tab>
+
+```bash
+bun add package-name
+```
+
+  </Tabs.Tab>
 </Tabs>
 ````
 
@@ -352,7 +451,7 @@ fenced code block.
 import { FileTree } from 'nextra/components'
 
 <FileTree>
-  <FileTree.Folder name="pages" defaultOpen>
+  <FileTree.Folder name="content" defaultOpen>
     <FileTree.File name="_meta.json" />
     <FileTree.File name="index.mdx" />
     <FileTree.Folder name="api">
@@ -361,7 +460,13 @@ import { FileTree } from 'nextra/components'
     </FileTree.Folder>
   </FileTree.Folder>
   <FileTree.File name="next.config.mjs" />
-  <FileTree.File name="theme.config.tsx" />
+  <FileTree.File name="mdx-components.tsx" />
+  <FileTree.Folder name="app">
+    <FileTree.File name="layout.tsx" />
+    <FileTree.Folder name="[[...mdxPath]]">
+      <FileTree.File name="page.tsx" />
+    </FileTree.Folder>
+  </FileTree.Folder>
 </FileTree>
 ```
 
@@ -412,57 +517,42 @@ import { FeatureCard } from '../components/FeatureCard'
 ### Global Styles
 
 ```css
-/* styles/globals.css */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* Custom styles */
+/* app/globals.css (imported by app/layout.tsx) */
 .feature-card {
-  @apply transition-shadow hover:shadow-lg;
+  padding: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 0.5rem;
+  transition: box-shadow 150ms;
+}
+.feature-card:hover {
+  box-shadow: 0 2px 8px #0002;
 }
 ```
 
 ### Theme Customization
 
+Set theme colors on `Head` in `app/layout.tsx`:
+
 ```tsx
-// theme.config.tsx
-const config: DocsThemeConfig = {
-  primaryHue: {
-    dark: 200,
-    light: 220
-  },
-  // Custom CSS
-  head: (
-    <>
-      <style>{`
-        :root {
-          --nextra-primary-hue: 220deg;
-        }
-      `}</style>
-    </>
-  )
-}
+<Head color={{ hue: { dark: 200, light: 220 } }} />
 ```
 
 ## Search Configuration
 
 ### Built-in Search
 
-Nextra includes Flexsearch by default. No configuration needed.
+Nextra 4 uses Pagefind. The setup's `postbuild` script indexes generated HTML into
+`public/_pagefind`. Search needs a completed build to produce its index.
 
 ### External Search (Algolia)
 
+Pass a custom search component to `Layout` in `app/layout.tsx` after importing your
+Algolia search integration:
+
 ```tsx
-// theme.config.tsx
-const config: DocsThemeConfig = {
-  search: {
-    component: function Search() {
-      // Custom Algolia DocSearch
-      return <AlgoliaSearch />
-    }
-  }
-}
+<Layout pageMap={await getPageMap()} navbar={navbar} footer={footer} search={<AlgoliaSearch />}>
+  {children}
+</Layout>
 ```
 
 ## SEO Configuration
@@ -480,21 +570,24 @@ description: Learn how to get started with Project in 5 minutes
 
 ### Global SEO
 
+Use Next.js metadata in `app/layout.tsx`. The content route's `generateMetadata`
+above returns each page's front matter.
+
 ```tsx
-// theme.config.tsx
-const config: DocsThemeConfig = {
-  useNextSeoProps() {
-    return {
-      titleTemplate: '%s - Project Documentation',
-      defaultTitle: 'Project Documentation',
-      description: 'Comprehensive documentation for Project',
-      openGraph: {
-        type: 'website',
-        locale: 'en_US',
-        url: 'https://docs.project.com',
-        siteName: 'Project Docs'
-      }
-    }
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  metadataBase: new URL('https://docs.project.com'),
+  title: {
+    template: '%s - Project Documentation',
+    default: 'Project Documentation'
+  },
+  description: 'Comprehensive documentation for Project',
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://docs.project.com',
+    siteName: 'Project Docs'
   }
 }
 ```
@@ -609,9 +702,14 @@ vercel
 
 # Static export
 # In next.config.mjs:
-# output: 'export'
+# output: 'export', trailingSlash: true, images: { unoptimized: true }
+# Set postbuild to: pagefind --site out --output-path out/_pagefind
+# Set start to: python3 -m http.server 4000 -d out
 bun run build
+bun run start
 ```
+
+Static exports are served from `out/`; `next start` is for the default server build.
 
 ### Deployment Checklist
 
@@ -624,11 +722,11 @@ bun run build
 
 ## Migration from Docusaurus
 
-| Docusaurus                     | Nextra                                 |
-| ------------------------------ | -------------------------------------- |
-| `docs/` folder                 | `pages/` folder                        |
-| `sidebars.ts`                  | `_meta.json` files                     |
-| `docusaurus.config.ts`         | `theme.config.tsx` + `next.config.mjs` |
-| `:::note` admonitions          | `<Callout>` component                  |
-| `@theme/Tabs`                  | `<Tabs>` from nextra                   |
-| `sidebar_position` frontmatter | Order in `_meta.json`                  |
+| Docusaurus                     | Nextra                               |
+| ------------------------------ | ------------------------------------ |
+| `docs/` folder                 | `content/` folder                    |
+| `sidebars.ts`                  | `_meta.json` files                   |
+| `docusaurus.config.ts`         | `app/layout.tsx` + `next.config.mjs` |
+| `:::note` admonitions          | `<Callout>` component                |
+| `@theme/Tabs`                  | `<Tabs>` from nextra                 |
+| `sidebar_position` frontmatter | Order in `_meta.json`                |
