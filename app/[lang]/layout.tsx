@@ -53,7 +53,8 @@ const COPY = {
 } as const
 
 export const viewport: Viewport = {
-  width: 'device-width', initialScale: 1,
+  width: 'device-width',
+  initialScale: 1,
   themeColor: [
     { media: '(prefers-color-scheme: light)', color: '#ffffff' },
     { media: '(prefers-color-scheme: dark)', color: '#0c111b' }
@@ -66,11 +67,7 @@ type Params = Promise<{ lang: string }>
  * 站点的根布局：直接把 <html lang> 按语言渲染进静态 HTML，
  * 保证英文页面的 lang 属性、Pagefind 分词语言与 SEO 判定都正确。
  */
-export async function generateMetadata({
-  params
-}: {
-  params: Params
-}): Promise<Metadata> {
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
   const { lang } = await params
   if (!isLocale(lang)) notFound()
   const copy = COPY[lang]
@@ -94,7 +91,9 @@ export async function generateMetadata({
     },
     verification: {
       google: process.env.GOOGLE_SITE_VERIFICATION,
-      ...(process.env.BING_SITE_VERIFICATION ? { other: { 'msvalidate.01': process.env.BING_SITE_VERIFICATION } } : {})
+      ...(process.env.BING_SITE_VERIFICATION
+        ? { other: { 'msvalidate.01': process.env.BING_SITE_VERIFICATION } }
+        : {})
     }
   }
 }
@@ -120,13 +119,7 @@ export default async function LangLayout({
       logo={
         <span className="fenno-brand">
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/fenno.svg"
-            alt=""
-            width={28}
-            height={28}
-            className="fenno-brand-logo"
-          />
+          <img src="/fenno.svg" alt="" width={28} height={28} className="fenno-brand-logo" />
           <span className="fenno-brand-name">{copy.siteName}</span>
         </span>
       }
@@ -134,7 +127,13 @@ export default async function LangLayout({
       chatLink="https://discord.gg/9HFMKz4qrg"
       chatIcon={<DiscordIcon width={24} aria-label="Discord" />}
     >
-      <a href="https://x.com/Fennoai" target="_blank" rel="noreferrer" aria-label={lang === 'en' ? 'Fenno on X' : 'Fenno 的 X 账号'} className="fenno-social-link">
+      <a
+        href="https://x.com/Fennoai"
+        target="_blank"
+        rel="noreferrer"
+        aria-label={lang === 'en' ? 'Fenno on X' : 'Fenno 的 X 账号'}
+        className="fenno-social-link"
+      >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <path d="M18.9 2H22l-6.8 7.8L23.2 22h-6.3L12 14.6 5.5 22H2.3l7.5-8.6L1.6 2h6.5l4.5 6.7L18.9 2Zm-1.1 18h1.7L7.2 4H5.4l12.4 16Z" />
         </svg>
@@ -170,7 +169,15 @@ export default async function LangLayout({
         <Layout
           navbar={navbar}
           pageMap={pageMap}
-          search={<Search placeholder={copy.search} emptyResult={copy.emptyResult} errorText={copy.searchError} loading={copy.loading} aria-label={copy.search} />}
+          search={
+            <Search
+              placeholder={copy.search}
+              emptyResult={copy.emptyResult}
+              errorText={copy.searchError}
+              loading={copy.loading}
+              aria-label={copy.search}
+            />
+          }
           lastUpdated={<LastUpdated locale={lang}>{copy.lastUpdated}</LastUpdated>}
           i18n={[...I18N]}
           footer={footer}

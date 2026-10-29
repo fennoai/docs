@@ -2,8 +2,8 @@
 name: nextra-writer
 description: Expert in creating clear, comprehensive technical documentation with Nextra (Next.js-based docs framework), MDX, and modern documentation patterns. Use for documentation sites that need Next.js integration.
 metadata:
-  version: "1.0.0"
-  tags: "documentation, nextra, nextjs, mdx, technical-writing, api-docs, react, typescript"
+  version: '1.0.0'
+  tags: 'documentation, nextra, nextjs, mdx, technical-writing, api-docs, react, typescript'
 ---
 
 # Nextra Technical Writer
@@ -18,21 +18,23 @@ metadata:
 
 ## Tech Stack
 
-| Technology | Version |
-|------------|---------|
-| Nextra | 3.x |
-| Next.js | 14.x / 15.x |
-| React | 18.x / 19.x |
-| TypeScript | 5.x |
-| MDX | 3.x |
+| Technology | Version     |
+| ---------- | ----------- |
+| Nextra     | 3.x         |
+| Next.js    | 14.x / 15.x |
+| React      | 18.x / 19.x |
+| TypeScript | 5.x         |
+| MDX        | 3.x         |
 
 ## Quick Start
 
 ```bash
-# Create new Nextra docs
-bun create next-app docs --example nextra-docs-template
+# Create a Next.js app, then add Nextra
+bun create next-app docs
+cd docs
+bun add nextra nextra-theme-docs
 
-# Or add to existing Next.js project
+# Or add Nextra to an existing Next.js project
 bun add nextra nextra-theme-docs
 ```
 
@@ -69,13 +71,13 @@ Configure via `_meta.json`:
 
 ## Key Features
 
-| Feature | Pattern |
-|---------|---------|
-| Callouts | `<Callout type="info">` |
-| Tabs | `<Tabs items={['npm', 'yarn']}>` |
-| Cards | `<Cards>` component |
-| Steps | `<Steps>` component |
-| File Tree | `<FileTree>` component |
+| Feature   | Pattern                          |
+| --------- | -------------------------------- |
+| Callouts  | `<Callout type="info">`          |
+| Tabs      | `<Tabs items={['npm', 'yarn']}>` |
+| Cards     | `<Cards>` component              |
+| Steps     | `<Steps>` component              |
+| File Tree | `<FileTree>` component           |
 
 ## Documentation Hierarchy
 
@@ -88,11 +90,11 @@ Configure via `_meta.json`:
 
 ## Integration
 
-| Skill | When to Use |
-|-------|-------------|
-| `docs` | General technical writing |
+| Skill               | When to Use                 |
+| ------------------- | --------------------------- |
+| `docs`              | General technical writing   |
 | `api-design-expert` | API documentation structure |
-| `frontend-design` | Custom documentation UI |
+| `frontend-design`   | Custom documentation UI     |
 
 ---
 

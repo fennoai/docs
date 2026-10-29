@@ -15,7 +15,7 @@ export async function generateMetadata(props: Props): Promise<Metadata> {
   const { lang, mdxPath } = await props.params
   if (!isLocale(lang)) notFound()
   const pages = await getDocPages()
-  const page = pages.find(item => item.route === docRoute(lang, mdxPath.join('/')))
+  const page = pages.find((item) => item.route === docRoute(lang, mdxPath.join('/')))
   if (!page) notFound()
   return pageMetadata(page, pages)
 }
@@ -26,18 +26,17 @@ export default async function Page(props: Props) {
   const { lang, mdxPath } = await props.params
   if (!isLocale(lang)) notFound()
   const pages = await getDocPages()
-  const page = pages.find(item => item.route === docRoute(lang, mdxPath.join('/')))
+  const page = pages.find((item) => item.route === docRoute(lang, mdxPath.join('/')))
   if (!page) notFound()
-  const { default: MDXContent, toc, metadata, sourceCode } = await importPage(
-    mdxPath,
-    lang
-  )
+  const { default: MDXContent, toc, metadata, sourceCode } = await importPage(mdxPath, lang)
 
   return (
     <>
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(pageStructuredData(page, pages)).replace(/</g, '\\u003c') }}
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify(pageStructuredData(page, pages)).replace(/</g, '\\u003c')
+        }}
       />
       <Wrapper toc={toc} metadata={metadata} sourceCode={sourceCode}>
         <MDXContent params={props.params} />

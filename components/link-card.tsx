@@ -13,7 +13,9 @@ export function LinkCard({ title, href, children }: LinkCardProps) {
     <Link href={href} className="fenno-link-card">
       <span className="fenno-link-card-title">
         {title}
-        <span aria-hidden="true" className="fenno-link-card-arrow">&#8599;</span>
+        <span aria-hidden="true" className="fenno-link-card-arrow">
+          &#8599;
+        </span>
       </span>
       <div className="fenno-link-card-description">{children}</div>
     </Link>

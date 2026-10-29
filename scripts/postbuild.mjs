@@ -5,9 +5,6 @@ import { join } from 'node:path'
 
 const OUT_DIR = 'out'
 
-execFileSync(
-  'pagefind',
-  ['--site', OUT_DIR, '--output-path', join(OUT_DIR, '_pagefind')],
-  { stdio: 'inherit' }
-)
-
+execFileSync('pagefind', ['--site', OUT_DIR, '--output-path', join(OUT_DIR, '_pagefind')], {
+  stdio: 'inherit'
+})

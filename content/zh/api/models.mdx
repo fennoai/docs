@@ -22,7 +22,7 @@ Fenno 以统一协议层收敛不同厂商的模型差异，你只需要关心�
 | 文本生成 | 对话、补全、长文写作、代码生成 | `/v1/chat/completions`、`/v1/responses`、`/v1/messages` |
 | 多模态输入 | 图片、PDF 等作为输入内容 | 同上（消息内容改为数组结构） |
 | 工具调用 | Function Calling / Tool Use，可并行或多轮 | 同上（`tools` 字段） |
-| 结构化输出 | JSON Mode / JSON Schema 约束 | 同上（`response_format`） |
+| 结构化输出 | JSON Mode / JSON Schema 约束（仅 OpenAI 兼容请求） | `/v1/chat/completions`、`/v1/responses`（`response_format`） |
 | 推理模式 | 长思考、逐步推理，按 token 计费 | 同上（模型或 `reasoning` 参数） |
 | 提示缓存 | 复用长前缀，降低重复上下文成本 | 同上（自动或显式缓存标记） |
 | 流式响应 | SSE 增量返回，首 token 更快 | 同上（`stream: true`） |

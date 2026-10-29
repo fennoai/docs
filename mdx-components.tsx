@@ -20,9 +20,7 @@ function DocsTable({ className = '', ...props }: ComponentProps<'table'>) {
 
 const components = { ...docsComponents, table: DocsTable, LinkCard }
 
-export const useMDXComponents: UseMDXComponents<typeof components> = <T,>(
-  overrides?: T
-) => ({
+export const useMDXComponents: UseMDXComponents<typeof components> = <T,>(overrides?: T) => ({
   ...components,
   ...overrides
 })

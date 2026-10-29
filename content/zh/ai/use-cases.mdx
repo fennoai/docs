@@ -98,7 +98,7 @@ PR #456: 添加用户搜索接口
 ```text
 PR #101: UserService 太大了
 
-@fennoai 将 UserService 拆分为 AuthService、ProfileService
+/simplify 将 UserService 拆分为 AuthService、ProfileService
 和 NotificationService。确保所有现有测试通过。
 ```
 
@@ -112,34 +112,7 @@ PR #101: UserService 太大了
 
 ---
 
-## 场景 5：自定义团队流程
-
-**现状**：团队有特定流程 —— 发布前安全审计、Schema 变更迁移脚本、部署检查清单。
-
-**用 FennoAI**：在 `.fennoai.yml` 中定义自定义命令：
-
-```yaml
-# .fennoai.yml
-custom_commands:
-  security-audit:
-    description: '对变更文件进行安全审计'
-    prompt: |
-      执行全面安全审计：
-      - 检查注入漏洞
-      - 验证输入校验
-      - 查找硬编码密钥
-      - 评估认证/授权逻辑
-```
-
-使用：
-
-```text
-/security-audit
-```
-
----
-
-## 场景 6：新人快速上手
+## 场景 5：新人快速上手
 
 **现状**：新人加入团队，想参与贡献但对代码库不够熟悉。
 
@@ -164,4 +137,3 @@ Issue #300: 为 API 添加速率限制
 | 需要设计方案 | `/plan`               | 编码前先对齐   |
 | PR 需要审查  | `/review`             | 即时全面反馈   |
 | 通用问题     | `@fennoai` + 自然语言 | 灵活的 AI 助手 |
-| 团队特定流程 | 自定义命令            | 可复用的工作流 |

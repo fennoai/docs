@@ -82,7 +82,7 @@ schedule:
 - `timezone`：可选，未设置时使用服务端默认时区
 - `repositories`：可选的单仓库列表；省略时使用当前仓库和 `branch` / 默认分支
 
-旧 `provider`、`agent` 和 `default_ai_provider` 仍可迁移读取，但新配置应使用 runtime，不再选择 model。
+`schedule:` 任务中，旧 `provider`、`agent` 和 `default_ai_provider` 字段仍可在迁移期读取；新的 `schedule` 条目应使用 `runtime`，不能再选择 model。`schedule:` 之外，`default_ai_provider` 与按 Provider 配置的 `model` 仍是当前有效的仓库配置，详见[仓库配置](/zh/ai/configuration)。
 
 ### 配置文件路径
 

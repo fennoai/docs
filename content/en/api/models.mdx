@@ -22,7 +22,7 @@ capability; auth, error codes and streaming formats are handled for you.
 | Text generation | Chat, completion, long-form writing, code | `/v1/chat/completions`, `/v1/responses`, `/v1/messages` |
 | Multimodal input | Images, PDFs and other content parts | same (array content) |
 | Tool calls | Function calling / tool use, parallel or multi-turn | same (`tools`) |
-| Structured output | JSON mode or JSON Schema | same (`response_format`) |
+| Structured output | JSON mode or JSON Schema (OpenAI-compatible requests only) | `/v1/chat/completions`, `/v1/responses` (`response_format`) |
 | Reasoning | Long thinking with token accounting | same (model or `reasoning` params) |
 | Prompt caching | Reuse long prefixes to cut cost and latency | same (automatic or explicit markers) |
 | Streaming | SSE deltas, faster first token | same (`stream: true`) |

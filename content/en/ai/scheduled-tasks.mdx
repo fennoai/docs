@@ -82,7 +82,7 @@ Each `schedule` item supports:
 - `timezone`: optional, falls back to the service default timezone
 - `repositories`: optional single-repository list; when omitted, uses the current repository and its `branch` or default branch
 
-Legacy `provider`, `agent`, and `default_ai_provider` fields remain readable during migration. New configuration should use runtime and does not select a model.
+Within `schedule:` entries, the legacy `provider`, `agent` and `default_ai_provider` fields remain readable during migration. New `schedule` entries should use `runtime` and cannot select a model. Outside `schedule:`, `default_ai_provider` and the per-provider `model` field are still the current repository configuration — see [Repository Config](/en/ai/configuration).
 
 ### Supported Config Paths
 

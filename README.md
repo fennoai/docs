@@ -13,15 +13,15 @@
 
 ## Build with Fenno
 
-**Fenno API** brings model access into your applications and tools through OpenAI, Anthropic and Gemini-compatible protocols. 
+**Fenno API** brings model access into your applications and tools through OpenAI, Anthropic and Gemini-compatible protocols.
 
 **FennoAI** brings an Agent into GitHub issues and pull requests to help understand code, make changes and
 review work.
 
-| Product | Start here |
-| --- | --- |
-| **Fenno API · Models** | [API documentation](https://docs.fenno.ai/en/api/) · [Get an API key](https://api.fenno.ai) |
-| **FennoAI · Agent** | [Agent documentation](https://docs.fenno.ai/en/ai/) · [GitHub App](https://github.com/apps/fennoai) |
+| Product                | Start here                                                                                          |
+| ---------------------- | --------------------------------------------------------------------------------------------------- |
+| **Fenno API · Models** | [API documentation](https://docs.fenno.ai/en/api/) · [Get an API key](https://api.fenno.ai)         |
+| **FennoAI · Agent**    | [Agent documentation](https://docs.fenno.ai/en/ai/) · [GitHub App](https://github.com/apps/fennoai) |
 
 This repository contains the English and Chinese documentation: quickstarts,
 protocol references, tool integrations, Agent workflows and configuration guides.

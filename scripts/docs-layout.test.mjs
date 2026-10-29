@@ -54,14 +54,19 @@ for (const locale of ['en', 'zh']) {
       const html = await readPage(`${locale}/${route}`)
       const markup = sidebar(html)
       assert.doesNotMatch(markup, /\bx:hidden\b/)
-      const links = [...markup.matchAll(/href="([^"]+)"/g)].map(match => match[1])
+      const links = [...markup.matchAll(/href="([^"]+)"/g)].map((match) => match[1])
       assert.ok(links.length > 0)
       const prefix = `/${locale}/${route.split('/')[0]}/`
-      assert.ok(links.every(href => href.startsWith(prefix) || href.startsWith('#')))
+      assert.ok(links.every((href) => href.startsWith(prefix) || href.startsWith('#')))
     })
   }
 
-  for (const [route, cardCount] of [['api/integrations', 4], ['api', 4], ['api/models', 3], ['ai', 4]]) {
+  for (const [route, cardCount] of [
+    ['api/integrations', 4],
+    ['api', 4],
+    ['api/models', 3],
+    ['ai', 4]
+  ]) {
     test(`${locale}/${route}: text cards and Markdown tables use shared styles`, async () => {
       const html = await readPage(`${locale}/${route}`.replace(/\/$/, ''))
       const main = html.match(/<main\b[^>]*>[\s\S]*?<\/main>/)?.[0]

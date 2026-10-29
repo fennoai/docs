@@ -1,0 +1,17 @@
+{
+  "$schema": "./node_modules/oxfmt/configuration_schema.json",
+  "printWidth": 100,
+  "semi": false,
+  "singleQuote": true,
+  "trailingComma": "none",
+  "endOfLine": "lf",
+  "ignorePatterns": [
+    ".next/**",
+    "out/**",
+    "node_modules/**",
+    "public/**",
+    "content/**",
+    "next-env.d.ts",
+    "pnpm-lock.yaml"
+  ]
+}

@@ -1,10 +1,10 @@
 name: Documentation feedback / 文档反馈
 description: Report unclear instructions, broken examples or missing documentation.
-title: "[Docs] "
+title: '[Docs] '
 body:
   - type: markdown
     attributes:
-      value: "Thank you for helping improve Fenno Docs. 请勿填写 API Key、认证头、账户凭据或私人代码。"
+      value: 'Thank you for helping improve Fenno Docs. 请勿填写 API Key、认证头、账户凭据或私人代码。'
   - type: input
     id: page
     attributes:

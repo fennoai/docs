@@ -50,7 +50,7 @@ Use an existing AgentAPI environment ID accessible to FennoAI, up to 128 bytes. 
 
 Anyone who can change the default branch configuration can select an environment accessible through the server's AgentAPI credentials. FennoAI does not enforce a separate environment allowlist per repository or organization. Deployment administrators must restrict those credentials to environments authorized for the repositories they serve; a shared credential with access across tenants does not provide repository-level isolation.
 
-Resuming an existing session preserves its original environment. After changing the configuration on the default branch, wait for the repository configuration cache to refresh (platform reads are cached for about 5 minutes), then use `/new` to create a session with the new environment. `/new` does not refresh this cache. Deployments using a legacy local repository cache must update that cache first.
+Resuming an existing session preserves its original environment. After changing the configuration on the default branch, wait for the repository configuration cache to refresh (platform reads are cached for about 5 minutes), then start a new Issue/PR task — for example with `/code`, `/plan` or `/review` — to create a session with the new environment. Starting a task does not refresh this cache itself. Deployments using a legacy local repository cache must update that cache first.
 
 Execution retries keep the selected environment. If the environment is missing, inaccessible, or not ready, session creation fails without falling back to the default. Repository configuration read, parse, or validation errors also stop the task; a missing configuration file still uses the defaults.
 

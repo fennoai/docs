@@ -46,10 +46,16 @@ aid, not a search-ranking guarantee.
 ## Checks
 
 ```sh
+pnpm lint
+pnpm format
 pnpm typecheck
 pnpm build
 pnpm test
 ```
+
+`pnpm lint` runs oxlint and `pnpm format` runs oxfmt. CI fails on lint warnings or
+unformatted files, so run both before pushing; `pnpm format:check` verifies formatting
+without writing.
 
 Tests inspect the generated `out/` files, so build first. They cover metadata,
 translations, internal links, anchors, structured data, removed pages and layout

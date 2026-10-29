@@ -22,15 +22,42 @@ const social = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630
 <text x="80" y="558" font-size="23" fill="#526078">docs.fenno.ai</text>
 </g></svg>`
 await sharp(Buffer.from(social)).png().toFile(new URL('og/docs.png', publicDir).pathname)
-for (const [name, size] of [['favicon-32.png', 32], ['apple-touch-icon.png', 180], ['icon-192.png', 192], ['icon-512.png', 512]]) {
+for (const [name, size] of [
+  ['favicon-32.png', 32],
+  ['apple-touch-icon.png', 180],
+  ['icon-192.png', 192],
+  ['icon-512.png', 512]
+]) {
   const padding = Math.round(size * 0.1)
-  const mark = await sharp(logo).resize(size - padding * 2, size - padding * 2).png().toBuffer()
+  const mark = await sharp(logo)
+    .resize(size - padding * 2, size - padding * 2)
+    .png()
+    .toBuffer()
   await sharp({ create: { width: size, height: size, channels: 4, background: '#ffffff' } })
-    .composite([{ input: mark, left: padding, top: padding }]).png().toFile(new URL(name, publicDir).pathname)
+    .composite([{ input: mark, left: padding, top: padding }])
+    .png()
+    .toFile(new URL(name, publicDir).pathname)
 }
-await writeFile(new URL('site.webmanifest', publicDir), JSON.stringify({
-  name: 'Fenno Docs', short_name: 'Fenno Docs', start_url: '/en/api/', scope: '/',
-  display: 'browser', background_color: '#ffffff', theme_color: '#1c4fd8',
-  icons: [192, 512].map(size => ({ src: `/icon-${size}.png`, sizes: `${size}x${size}`, type: 'image/png', purpose: 'any' }))
-}, null, 2) + '\n')
+await writeFile(
+  new URL('site.webmanifest', publicDir),
+  JSON.stringify(
+    {
+      name: 'Fenno Docs',
+      short_name: 'Fenno Docs',
+      start_url: '/en/api/',
+      scope: '/',
+      display: 'browser',
+      background_color: '#ffffff',
+      theme_color: '#1c4fd8',
+      icons: [192, 512].map((size) => ({
+        src: `/icon-${size}.png`,
+        sizes: `${size}x${size}`,
+        type: 'image/png',
+        purpose: 'any'
+      }))
+    },
+    null,
+    2
+  ) + '\n'
+)
 console.log('Generated 1200x630 social image and site icons')

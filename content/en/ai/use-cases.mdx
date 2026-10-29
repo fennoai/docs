@@ -99,7 +99,7 @@ PR #456: Add user search endpoint
 ```text
 PR #101: UserService is too large
 
-@fennoai Split UserService into AuthService, ProfileService,
+/simplify Split UserService into AuthService, ProfileService,
 and NotificationService. Keep all existing tests passing.
 ```
 
@@ -113,34 +113,7 @@ and NotificationService. Keep all existing tests passing.
 
 ---
 
-## Scenario 5: Custom team workflows
-
-**The situation**: Your team has specific processes — security audits before releases, migration scripts for schema changes, deployment checklists.
-
-**With FennoAI**: Define custom commands in `.fennoai.yml`:
-
-```yaml
-# .fennoai.yml
-custom_commands:
-  security-audit:
-    description: 'Run a security audit on changed files'
-    prompt: |
-      Perform a thorough security audit:
-      - Check for injection vulnerabilities
-      - Verify input validation
-      - Look for hardcoded secrets
-      - Assess authentication/authorization logic
-```
-
-Then use it:
-
-```text
-/security-audit
-```
-
----
-
-## Scenario 6: Onboard new contributors
+## Scenario 5: Onboard new contributors
 
 **The situation**: A new developer joins. They want to contribute but don't know the codebase well enough to implement features confidently.
 
@@ -165,4 +138,3 @@ The new developer gets a detailed plan they can learn from — and if they choos
 | Feature design needed | `/plan`                       | Get alignment before coding   |
 | PR needs review       | `/review`                     | Immediate, thorough feedback  |
 | General question      | `@fennoai` + natural language | Flexible AI assistance        |
-| Team-specific process | Custom command                | Repeatable workflows          |
