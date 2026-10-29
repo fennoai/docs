@@ -1,0 +1,94 @@
+---
+title: "API 错误处理与重试"
+description: "排查 Fenno API 的认证失败、模型不存在、额度不足及超时问题，理解 HTTP 状态码，采用合理的重试策略并避免重复请求。"
+---
+
+import { Callout } from 'nextra/components'
+
+# 错误与重试
+
+## 错误响应结构
+
+OpenAI 兼容端点：
+
+```json
+{
+  "error": {
+    "message": "Invalid API key",
+    "type": "invalid_request_error",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+Anthropic 端点：
+
+```json
+{
+  "type": "error",
+  "error": { "type": "authentication_error", "message": "invalid x-api-key" }
+}
+```
+
+Gemini 端点：
+
+```json
+{
+  "error": {
+    "code": 400,
+    "message": "API key not valid",
+    "status": "INVALID_ARGUMENT"
+  }
+}
+```
+
+## 状态码
+
+| 状态码 | 含义 | 是否重试 |
+| --- | --- | --- |
+| `400` | 请求参数错误 | 否，修正请求 |
+| `401` | Key 无效、被删除或禁用 | 否，检查 Key |
+| `403` | 无该模型权限或被策略拦截 | 否 |
+| `404` | 路径或模型不存在 | 否，检查 Base URL 与模型名 |
+| `402` | 额度不足 | 否，充值或调整限额 |
+| `408` | 上游超时 | 可重试 |
+| `429` | 触发限流 | 可重试，按退避策略 |
+| `5xx` | 上游或网关内部错误 | 可重试 |
+
+<Callout type="info">
+  重试只对幂等或可安全重放的请求有意义。流式请求一旦开始返回内容，重试可能造成重复输出，
+  建议在首个 token 前才重试。
+</Callout>
+
+## 退避策略
+
+推荐指数退避 + 抖动：
+
+```python
+import random, time
+
+def backoff(attempt: int) -> float:
+    base = min(2 ** attempt, 30)
+    return base * (0.5 + random.random() / 2)
+
+for attempt in range(5):
+    try:
+        resp = call()
+        break
+    except RetryableError:
+        if attempt == 4:
+            raise
+        time.sleep(backoff(attempt))
+```
+
+## 限流
+
+- 限流按账号 / Key / 模型维度生效。
+- 响应头会返回剩余额度与重置时间（视上游而定），应优先读取而不是盲目重试。
+- 需要更高并发时，请联系支持调整配额，不要通过多 Key 绕过限制。
+
+## 排查建议
+
+1. 先用 `curl` 复现，排除 SDK 层干扰。
+2. 检查 Base URL 是否包含正确的版本前缀（OpenAI 用 `/v1`，Gemini 用 `/v1beta`）。
+3. 打开调试日志，记录请求 ID 与状态码，便于提交工单。

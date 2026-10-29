@@ -1,0 +1,61 @@
+---
+title: "Cherry Studio 接入 Fenno API"
+description: "在 Cherry Studio 中添加 Fenno API 服务商、启用模型并验证聊天，核对接口路径与协议，分别检查图片和向量化能力。"
+---
+
+import { Callout } from 'nextra/components'
+
+# Cherry Studio 接入
+
+[Cherry Studio](https://cherry-ai.com) 是桌面 AI 客户端。本指南先通过 OpenAI 兼容协议接通普通聊天，再按模型能力启用其他功能。
+
+## 准备
+
+安装 Cherry Studio，准备 Fenno API Key 和一个支持 Chat Completions 的模型 ID。模型 ID 以 [Fenno 控制台](https://api.fenno.ai)或[模型列表](/zh/api/openai#模型列表)为准。
+
+## 1. 添加服务商
+
+打开 **设置 → 模型服务 → 添加**，名称填写 `Fenno`，类型选择 **OpenAI** 或当前版本对应的 OpenAI 兼容类型。
+
+| 配置项 | 填写内容 |
+| --- | --- |
+| 服务商名称 | `Fenno` |
+| API 密钥 | 你的 Fenno API Key |
+| API 地址 | `https://api.fenno.ai/v1` |
+| 模型 ID | 从控制台复制的精确 ID |
+
+先保留普通 Chat Completions 模式，不要同时开启多个协议或额外参数。
+
+## 2. 添加并启用模型
+
+1. 在服务商配置中打开 **管理**或**获取模型**。
+2. 将需要的模型加入启用列表；获取列表失败时，可以手动添加精确 ID。
+3. 确认服务商开关已启用，再回到聊天界面选择 **Fenno** 分组下的模型。
+
+模型出现在列表中，只代表配置完成，不代表当前 Key 一定有调用权限。
+
+## 3. 检测与首次对话
+
+点击客户端的检测按钮，选择目标模型。检测通过后新建会话，发送“只回复 OK”，并在 Fenno 控制台核对对应请求。
+
+如果列表检测失败但手动添加成功，继续检查检测使用的模型和协议，不要只根据服务商图标判断连通。
+
+## Responses 与其他能力
+
+如果当前版本提供 **Responses** 模式，只有在所选模型支持 Responses 时才启用；Base URL 仍为 `https://api.fenno.ai/v1`。
+
+<Callout type="info">
+  图片输入、图片生成、知识库向量化是不同能力，可能使用不同模型与端点。聊天接通后请分别配置并验证，不能把聊天模型直接当作图像或 Embeddings 模型。
+</Callout>
+
+## 常见问题
+
+| 现象 | 检查方法 |
+| --- | --- |
+| 服务商不出现在选择器 | 检查服务商开关和模型是否加入启用列表 |
+| 模型列表为空 | 核对 API 地址、Key 和模型权限；尝试手动填写精确 ID |
+| 404 / 路径不存在 | 确认实际请求为 `/v1/chat/completions`，不要重复追加 `/v1` |
+| 能聊天但图片或工具失败 | 核对模型能力、协议和客户端的能力开关 |
+| 401 / 429 | 参考[错误与重试](/zh/api/errors)，不要反复点击检测 |
+
+菜单名称可能随版本变化，以 [Cherry Studio 官方文档](https://docs.cherry-ai.com/)为准。

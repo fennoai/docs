@@ -1,0 +1,107 @@
+---
+title: "Fenno API 快速开始"
+description: "从创建 Fenno API Key 开始，选择可用模型、配置基础地址并发送第一个请求，快速完成模型调用与接入验证。"
+---
+
+import { Callout, Steps, Tabs } from 'nextra/components'
+
+# 快速开始
+
+本页用最短路径跑通第一个请求：创建 API Key → 选择协议 → 发起调用。
+
+<Steps>
+
+### 创建 API Key
+
+1. 登录 [Fenno API 控制台](https://api.fenno.ai)。
+2. 进入 **设置 → API Keys**，点击 **创建新密钥**。
+3. 复制并妥善保存。Key 只在创建时完整展示一次。
+
+<Callout type="warning">
+  不要把 Key 提交到仓库或写进前端代码。服务端使用时请通过环境变量注入，例如
+  `FENNO_API_KEY`。
+</Callout>
+
+### 配置 Base URL
+
+| 协议 | Base URL |
+| --- | --- |
+| OpenAI 兼容 | `https://api.fenno.ai/v1` |
+| Anthropic 原生 | `https://api.fenno.ai` |
+| Gemini 原生 | `https://api.fenno.ai` |
+
+### 发起第一个请求
+
+<Tabs items={['cURL', 'Python (OpenAI SDK)', 'Node.js (OpenAI SDK)']}>
+  <Tabs.Tab>
+    ```bash
+    curl https://api.fenno.ai/v1/chat/completions \
+      -H "Authorization: Bearer $FENNO_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "model": "gpt-4o-mini",
+        "messages": [{"role": "user", "content": "用一句话解释什么是统一 API 网关"}]
+      }'
+    ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```python
+    import os
+    from openai import OpenAI
+
+    client = OpenAI(
+        base_url="https://api.fenno.ai/v1",
+        api_key=os.environ["FENNO_API_KEY"],
+    )
+
+    resp = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": "用一句话解释什么是统一 API 网关"}],
+    )
+    print(resp.choices[0].message.content)
+    ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```ts
+    import OpenAI from 'openai'
+
+    const client = new OpenAI({
+      baseURL: 'https://api.fenno.ai/v1',
+      apiKey: process.env.FENNO_API_KEY
+    })
+
+    const resp = await client.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: '用一句话解释什么是统一 API 网关' }]
+    })
+    console.log(resp.choices[0].message.content)
+    ```
+  </Tabs.Tab>
+</Tabs>
+
+</Steps>
+
+## 接入编码工具
+
+```bash
+# Claude Code
+export ANTHROPIC_BASE_URL="https://api.fenno.ai"
+export ANTHROPIC_AUTH_TOKEN="$FENNO_API_KEY"
+```
+
+```bash
+# Codex / OpenAI 兼容工具
+export OPENAI_BASE_URL="https://api.fenno.ai/v1"
+export OPENAI_API_KEY="$FENNO_API_KEY"
+```
+
+更多工具的完整配置见[工具接入](/zh/api/integrations/claude-code)。
+
+## 常见问题
+
+| 现象 | 排查方向 |
+| --- | --- |
+| `401 Unauthorized` | Key 是否完整、是否被删除或禁用 |
+| `404 Not Found` | Base URL 是否多了或少了 `/v1` |
+| `429 Too Many Requests` | 触发速率限制，见[错误与重试](/zh/api/errors) |
+| 模型不存在 | 确认模型标识拼写，以及账号是否有该模型权限 |

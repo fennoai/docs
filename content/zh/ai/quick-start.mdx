@@ -1,0 +1,65 @@
+---
+title: "FennoAI 快速开始"
+description: "安装 FennoAI GitHub App、授权目标仓库并通过 @fennoai 发起第一个任务，无需自行部署服务即可体验代码分析与修改。"
+---
+
+import { Callout, Cards, Steps } from 'nextra/components'
+
+# 快速开始
+
+最快的上手方式是通过 **FennoAI GitHub App** —— 无需搭建服务器，无需配置文件。
+
+## GitHub App（推荐）
+
+<Steps>
+
+### 安装 GitHub App
+
+访问 [github.com/apps/fennoai](https://github.com/apps/fennoai)，点击 **Install**，选择要使用 FennoAI 的仓库。
+
+### 打开一个 Issue 或 PR
+
+进入你仓库中的任意 Issue 或 PR。
+
+### @ 提及 FennoAI
+
+发表一条包含 `@fennoai` 的评论：
+
+```text
+@fennoai 你好，帮我分析一下这个仓库的结构
+```
+
+### 等待响应
+
+FennoAI 会在同一评论线程中回复，你可以查看它读取仓库和执行任务的进展。
+
+### 尝试一个真实任务
+
+确认它正常工作后，尝试一个有意义的任务：
+
+```text
+@fennoai 修复这个 Issue 中描述的 Bug
+```
+
+FennoAI 会克隆仓库，编写修复代码，并提交一个 PR 供你 Review。
+
+</Steps>
+
+## 下一步
+
+<Cards num={2}>
+<LinkCard title="@ 提及模式" href="/zh/ai/mention-mode">
+  了解 `@fennoai` 自由提问的使用场景
+</LinkCard>
+<LinkCard title="命令参考" href="/zh/ai/commands">
+  查看所有斜杠命令及其适用场景
+</LinkCard>
+<LinkCard title="模型切换" href="/zh/ai/model-selection">
+  为不同任务选择不同的 AI 模型
+</LinkCard>
+
+</Cards>
+
+<Callout type="info">
+  需要帮助？请通过 [GitHub Issues](https://github.com/fennoai/docs/issues/new) 反馈文档问题，或加入 [Discord](https://discord.gg/9HFMKz4qrg) 交流。公开反馈时不要包含密钥或私人代码。
+</Callout>

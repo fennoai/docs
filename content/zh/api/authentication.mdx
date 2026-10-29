@@ -1,0 +1,84 @@
+---
+title: "API Key 与鉴权方式"
+description: "了解 Fenno API 的 Bearer、Anthropic 与 Gemini 鉴权方式，配置 SDK 密钥，检查 Key 权限与额度，并避免凭据泄露。"
+---
+
+import { Callout, Tabs } from 'nextra/components'
+
+# 鉴权
+
+所有请求都需要携带 API Key。Fenno 使用同一把 Key 支持三种协议的认证方式，按你调用的端点选择即可。
+
+## 认证方式
+
+<Tabs items={['OpenAI 兼容', 'Anthropic 原生', 'Gemini 原生']}>
+  <Tabs.Tab>
+    使用 `Authorization: Bearer`：
+
+    ```http
+    Authorization: Bearer $FENNO_API_KEY
+    ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    使用 `x-api-key`：
+
+    ```http
+    x-api-key: $FENNO_API_KEY
+    anthropic-version: 2023-06-01
+    ```
+
+    <Callout type="info">
+      Anthropic SDK 的 `auth_token` 与 `api_key` 两种传参方式都支持，但同一请求不要同时携带。
+    </Callout>
+  </Tabs.Tab>
+  <Tabs.Tab>
+    使用 `x-goog-api-key` 或查询参数 `key`：
+
+    ```http
+    x-goog-api-key: $FENNO_API_KEY
+    ```
+  </Tabs.Tab>
+</Tabs>
+
+## SDK 配置
+
+```python
+from anthropic import Anthropic
+
+client = Anthropic(
+    base_url="https://api.fenno.ai",
+    api_key="<FENNO_API_KEY>",
+)
+```
+
+```ts
+import { GoogleGenAI } from '@google/genai'
+
+const ai = new GoogleGenAI({
+  apiKey: process.env.FENNO_API_KEY,
+  httpOptions: { baseUrl: 'https://api.fenno.ai' }
+})
+```
+
+## Key 与权限
+
+- 一个账号可以创建多把 Key，便于区分环境（开发 / 预发 / 生产）或按业务线拆分用量。
+- Key 与账号的模型权限、额度绑定；权限变更后对已创建的 Key 立即生效。
+- Key 泄露时请立即在控制台删除并重新创建，删除后不可恢复。
+
+## 使用约束
+
+<Callout type="warning">
+  请勿在浏览器、移动端 App 等不可信环境中直接使用 Key。需要前端直连时，应由你自己的
+  服务端做鉴权与转发，或使用短时有效的临时凭证方案。
+</Callout>
+
+## 用量与配额
+
+请求会按模型记录 token 用量并实时扣减额度。你可以在控制台查看：
+
+- 按 Key / 模型 / 时间维度的用量明细；
+- 余额与限额状态；
+- 调用失败与限流记录。
+
+额度不足时请求会返回 `402` 或 `429`，具体见[错误与重试](/zh/api/errors)。

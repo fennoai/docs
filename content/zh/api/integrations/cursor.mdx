@@ -1,0 +1,45 @@
+---
+title: "Cursor 接入 Fenno API"
+description: "在 Cursor 中配置 Fenno API Key 与 OpenAI Base URL，了解客户端功能限制，核对当前模型选择和请求实际使用的供应商。"
+---
+
+import { Callout } from 'nextra/components'
+
+# Cursor 接入
+
+Cursor 支持自定义 OpenAI 兼容端点，可以把请求转发到 Fenno。
+
+## 配置步骤
+
+1. 打开 **Settings → Models**。
+2. 点击 **Add model**，填入控制台可用的精确模型 ID。
+3. 展开 **OpenAI API Key**，填入你的 Fenno Key。
+4. 在 **Override OpenAI Base URL** 中填入：
+
+```text
+https://api.fenno.ai/v1
+```
+
+5. 保存 Key 并打开 **Use API Key**，启用 Base URL 覆盖；若当前版本提供 **Verify**，再运行检测。
+6. 新建会话，手动选中配置的模型，核对 Fenno 控制台中的请求时间和用量。
+
+<Callout type="warning">
+  Cursor 的部分功能（如内联补全）依赖官方特定模型。若某个功能不可用，请回退到官方模型，
+  是否使用自定义 Key 取决于当前客户端版本、所选模型和账户策略，不保证所有功能都走 Fenno。
+</Callout>
+
+## 排障
+
+| 现象 | 处理 |
+| --- | --- |
+| Verify 失败 | 确认 Base URL 带 `/v1`，且网络可访问 `api.fenno.ai` |
+| 提示模型不存在 | 模型标识需与控制台一致，不要填写展示名称 |
+| 请求 429 | 降低并发或联系支持调整配额 |
+
+## 团队策略与替代方案
+
+企业管理员可以禁止个人 API Key。没有自定义入口时先检查团队策略，不要把它当作 Fenno 鉴权故障。自定义 Key 也不意味着绕过客户端自身的数据处理流程，请阅读工具隐私说明。
+
+需要独立的供应商配置时，可以在 Cursor 内置终端使用 [Claude Code](/zh/api/integrations/claude-code) 或 [Codex](/zh/api/integrations/codex)，无需更换编辑器。
+
+参考 [Cursor 官方设置更新](https://cursor.com/docs/release-notes/agents-window)与[团队模型管理](https://cursor.com/docs/enterprise/model-and-integration-management)。

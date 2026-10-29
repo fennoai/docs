@@ -1,0 +1,135 @@
+---
+title: "OpenAI 兼容 API 参考"
+description: "查看 Fenno API 的 OpenAI 兼容接口，包括 Chat Completions、Responses、Embeddings、图像生成与模型列表，附请求和流式调用示例。"
+---
+
+import { Callout, Tabs } from 'nextra/components'
+
+# OpenAI 兼容 API
+
+Base URL：`https://api.fenno.ai/v1`。以下端点与 OpenAI 官方协议保持一致，可直接使用官方 SDK。
+
+## 端点一览
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| POST | `/chat/completions` | 对话补全，兼容性最好 |
+| POST | `/responses` | 新版响应接口，指令与输入分离 |
+| POST | `/embeddings` | 文本向量化 |
+| POST | `/images/generations` | 文生图 |
+| POST | `/images/edits` | 图像编辑 |
+| GET | `/models` | 可用模型列表 |
+| GET | `/models/{model}` | 单个模型信息 |
+
+## Chat Completions
+
+```http
+POST https://api.fenno.ai/v1/chat/completions
+Authorization: Bearer $FENNO_API_KEY
+Content-Type: application/json
+```
+
+主要参数：
+
+| 参数 | 类型 | 说明 |
+| --- | --- | --- |
+| `model` | string | 模型标识，必填 |
+| `messages` | array | 消息数组，必填 |
+| `stream` | boolean | 是否开启 SSE 流式 |
+| `temperature` | number | 采样温度 |
+| `max_tokens` | number | 最大输出 token |
+| `tools` | array | 工具定义（Function Calling） |
+| `tool_choice` | string \| object | 工具选择策略 |
+| `response_format` | object | JSON 模式或 JSON Schema |
+| `reasoning` | object | 推理强度等扩展参数 |
+
+<Tabs items={['流式', '非流式']}>
+  <Tabs.Tab>
+    ```python
+    stream = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": "写一段 20 字的 slogan"}],
+        stream=True,
+    )
+    for chunk in stream:
+        delta = chunk.choices[0].delta.content
+        if delta:
+            print(delta, end="", flush=True)
+    ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```python
+    resp = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": "写一段 20 字的 slogan"}],
+    )
+    print(resp.choices[0].message.content)
+    ```
+  </Tabs.Tab>
+</Tabs>
+
+## Responses
+
+`/responses` 将系统指令（`instructions`）与输入（`input`）分离，长系统提示更容易命中缓存，
+适合生产环境长期运行的应用。
+
+```python
+resp = client.responses.create(
+    model="gpt-4o-mini",
+    instructions="你是一个严谨的技术文档助手。",
+    input="用三句话说明什么是提示缓存。",
+)
+print(resp.output_text)
+```
+
+## Embeddings
+
+```http
+POST https://api.fenno.ai/v1/embeddings
+```
+
+```python
+resp = client.embeddings.create(
+    model="text-embedding-3-small",
+    input=["第一段文本", "第二段文本"],
+)
+print(len(resp.data[0].embedding))
+```
+
+## 图像生成
+
+```http
+POST https://api.fenno.ai/v1/images/generations
+```
+
+| 参数 | 类型 | 说明 |
+| --- | --- | --- |
+| `model` | string | 图像模型标识 |
+| `prompt` | string | 画面描述 |
+| `size` | string | 输出尺寸，如 `1024x1024` |
+| `n` | number | 生成数量 |
+| `quality` | string | 质量档位（视模型支持） |
+
+图像编辑使用 `/images/edits`，以 `multipart/form-data` 上传原图与可选蒙版：
+
+```bash
+curl https://api.fenno.ai/v1/images/edits \
+  -H "Authorization: Bearer $FENNO_API_KEY" \
+  -F "model=<image-model>" \
+  -F "prompt=把背景替换为纯白" \
+  -F "image=@./input.png"
+```
+
+<Callout type="info">
+  图像模型的具体可用标识与尺寸支持以控制台为准；不同模型对 `quality`、`style` 等参数的支持
+  存在差异，传入不支持参数时可能被忽略或返回参数错误。
+</Callout>
+
+## 模型列表
+
+```bash
+curl https://api.fenno.ai/v1/models \
+  -H "Authorization: Bearer $FENNO_API_KEY"
+```
+
+返回结构遵循 OpenAI `List Models` 格式，可据此做启动时能力探测。

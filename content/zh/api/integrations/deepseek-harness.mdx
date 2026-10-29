@@ -1,0 +1,68 @@
+---
+title: "DeepSeek Harness 接入 Fenno API"
+description: "在 DeepSeek Harness（dsh）中添加 Fenno API 自定义提供方，通过 Web UI 配置协议与模型，选择工作区并排查凭据或接口问题。"
+---
+
+import { Callout } from 'nextra/components'
+
+# DeepSeek Harness 接入
+
+[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness) 的命令名是 `dsh`，支持通过模型插件连接自定义提供方。本指南使用 Web UI 添加 Fenno API，不覆盖内置 DeepSeek 提供方。
+
+<Callout type="warning">
+  dsh 迭代较快，旧版 `settings.yaml` 示例不一定适用于当前版本。优先使用模型设置界面；需要编辑文件时，以当前 profile 的配置文件和官方文档为准。
+</Callout>
+
+## 1. 安装与启动
+
+按[官方仓库安装说明](https://github.com/deepseek-ai/deepseek-harness)准备运行环境，安装后检查版本并启动本地界面：
+
+```bash
+npm install -g @deepseek-ai/dsh
+dsh --version
+dsh web
+```
+
+使用终端显示的本地地址。若地址包含访问 token，不要公开分享或直接暴露到公网。
+
+## 2. 添加自定义提供方
+
+进入 **设置 → 模型 → 添加自定义提供方**：
+
+| 配置项 | 值 |
+| --- | --- |
+| Provider ID | `fenno` |
+| 显示名称 | `Fenno API` |
+| API 地址 | `https://api.fenno.ai/v1` |
+| API 协议 | `openai-completions` |
+| API 密钥 | 你的 Fenno API Key |
+
+获取模型列表并添加需要的模型，也可以手动填写精确模型 ID。选择支持 Chat Completions 与工具调用的模型，不要按展示名称推测 ID。
+
+## 3. 选择模型与工作区
+
+保存提供方后，在会话模型选择器里选择 **Fenno API** 分组，不要误选 `deepseek-official`。首次验证选择临时测试目录，确认工作区权限后，发送“只回复 OK，不调用工具”。
+
+到 Fenno 控制台核对请求时间与模型，再单独测试工具调用。模型能出现在选择器中，不代表凭据或完整工作流已验证。
+
+## 协议选择
+
+| `api` | Fenno 地址 | 要求 |
+| --- | --- | --- |
+| `openai-completions` | `https://api.fenno.ai/v1` | 模型支持 Chat Completions |
+| `openai-responses` | `https://api.fenno.ai/v1` | 模型支持 Responses |
+| `anthropic-messages` | `https://api.fenno.ai` | 模型支持 Anthropic Messages |
+
+不要把一个协议的支持范围推广到所有模型。出现空回复、400 或接口不支持时，先检查模型与协议是否匹配。
+
+## 高级配置与排错
+
+当前官方说明将 Web UI 的提供方配置写入 `$DSH_HOME/profiles/web/cordis.patch.yml`；自定义 profile 使用自己的目录。默认配置根目录为 `~/.dsh`，设置了 `DSH_HOME` 时以其值为准。
+
+- 使用 `apiKeyEnv` 时，它表示凭据引用名称，不是明文 Key。确保启动 dsh 的环境可以解析该凭据。
+- `MISSING_CREDENTIAL`：核对当前提供方、凭据来源和启动环境，不要打印完整凭据文件。
+- 模型不出现：检查是否已添加到自定义提供方并保存。
+- 插件或路由重复：检查同一 profile 是否重复注册了同名提供方。
+- 上下文和输出上限：填写模型实际支持值，不照搬其他模型的默认值。
+
+参考[官方提供方配置指南](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/user/guide/providers.md)。

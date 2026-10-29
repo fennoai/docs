@@ -1,0 +1,107 @@
+---
+title: "Fenno API quickstart"
+description: "Make your first Fenno API request: create an API key, choose an available model and configure a client with the correct base URL and authentication."
+---
+
+import { Callout, Steps, Tabs } from 'nextra/components'
+
+# Quickstart
+
+This page gets you to a first successful call: create a key, pick a protocol, send a request.
+
+<Steps>
+
+### Create an API key
+
+1. Sign in to the [Fenno API console](https://api.fenno.ai).
+2. Go to **Settings → API Keys** and click **Create key**.
+3. Copy it. The full value is shown only once.
+
+<Callout type="warning">
+  Never commit keys to a repository or ship them in frontend code. Inject them via environment
+  variables, for example `FENNO_API_KEY`.
+</Callout>
+
+### Configure the base URL
+
+| Protocol | Base URL |
+| --- | --- |
+| OpenAI compatible | `https://api.fenno.ai/v1` |
+| Anthropic native | `https://api.fenno.ai` |
+| Gemini native | `https://api.fenno.ai` |
+
+### Send the first request
+
+<Tabs items={['cURL', 'Python (OpenAI SDK)', 'Node.js (OpenAI SDK)']}>
+  <Tabs.Tab>
+    ```bash
+    curl https://api.fenno.ai/v1/chat/completions \
+      -H "Authorization: Bearer $FENNO_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "model": "gpt-4o-mini",
+        "messages": [{"role": "user", "content": "Explain a unified API gateway in one sentence"}]
+      }'
+    ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```python
+    import os
+    from openai import OpenAI
+
+    client = OpenAI(
+        base_url="https://api.fenno.ai/v1",
+        api_key=os.environ["FENNO_API_KEY"],
+    )
+
+    resp = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": "Explain a unified API gateway in one sentence"}],
+    )
+    print(resp.choices[0].message.content)
+    ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```ts
+    import OpenAI from 'openai'
+
+    const client = new OpenAI({
+      baseURL: 'https://api.fenno.ai/v1',
+      apiKey: process.env.FENNO_API_KEY
+    })
+
+    const resp = await client.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: 'Explain a unified API gateway in one sentence' }]
+    })
+    console.log(resp.choices[0].message.content)
+    ```
+  </Tabs.Tab>
+</Tabs>
+
+</Steps>
+
+## Wire up coding tools
+
+```bash
+# Claude Code
+export ANTHROPIC_BASE_URL="https://api.fenno.ai"
+export ANTHROPIC_AUTH_TOKEN="$FENNO_API_KEY"
+```
+
+```bash
+# Codex / OpenAI-compatible tools
+export OPENAI_BASE_URL="https://api.fenno.ai/v1"
+export OPENAI_API_KEY="$FENNO_API_KEY"
+```
+
+Full configurations live under [Integrations](/en/api/integrations/claude-code).
+
+## Troubleshooting
+
+| Symptom | What to check |
+| --- | --- |
+| `401 Unauthorized` | Key truncated, deleted or disabled |
+| `404 Not Found` | Missing or duplicated `/v1` in the base URL |
+| `429 Too Many Requests` | Rate limited — see [Errors & retries](/en/api/errors) |
+| Model not found | Model identifier, or account permissions for that model |

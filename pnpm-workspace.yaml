@@ -1,0 +1,7 @@
+packages:
+  - '.'
+
+overrides:
+  # Nextra 4.6.1 的 Layout 在 zod >=4.2 下会因 strictObject 校验 children 失败，
+  # 固定到 Nextra 声明的 4.1.x 版本线可保持兼容。
+  zod: 4.1.12

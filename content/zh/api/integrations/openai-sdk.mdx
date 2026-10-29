@@ -1,0 +1,121 @@
+---
+title: "OpenAI SDK 接入 Fenno API"
+description: "使用 OpenAI Python 与 JavaScript 官方 SDK 接入 Fenno API，配置服务端密钥，运行 Chat Completions、流式输出和 Responses 示例。"
+---
+
+import { Callout } from 'nextra/components'
+
+# OpenAI SDK 接入
+
+在服务端使用官方 OpenAI SDK 时，把客户端地址改为 Fenno，并传入 Fenno Key。模型 ID 也需要替换成你的账户可用值，不要假设原来使用的模型一定存在。
+
+## 准备环境变量
+
+替换以下两个占位值。`FENNO_MODEL` 先选支持 Chat Completions 的模型；切换 Responses 示例时，再确认对应协议支持。
+
+```bash
+export FENNO_API_KEY="<YOUR_FENNO_API_KEY>"
+export FENNO_MODEL="<YOUR_MODEL_ID>"
+```
+
+## Python
+
+安装 SDK，在同一个终端运行示例：
+
+```bash
+python -m pip install --upgrade openai
+```
+
+```python filename="example.py"
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+)
+
+response = client.chat.completions.create(
+    model=os.environ["FENNO_MODEL"],
+    messages=[{"role": "user", "content": "Reply with OK only."}],
+)
+print(response.choices[0].message.content)
+```
+
+```bash
+python example.py
+```
+
+## JavaScript / TypeScript
+
+以下示例使用 Node.js 的 `.mjs` 文件，可直接运行；TypeScript 项目使用相同客户端配置。
+
+```bash
+npm install openai
+```
+
+```javascript filename="example.mjs"
+import OpenAI from 'openai'
+
+const client = new OpenAI({
+  baseURL: 'https://api.fenno.ai/v1',
+  apiKey: process.env.FENNO_API_KEY
+})
+
+const response = await client.chat.completions.create({
+  model: process.env.FENNO_MODEL,
+  messages: [{ role: 'user', content: 'Reply with OK only.' }]
+})
+console.log(response.choices[0].message.content)
+```
+
+```bash
+node example.mjs
+```
+
+## 流式输出
+
+在 Python 示例已创建的 `client` 上，替换请求部分：
+
+```python
+stream = client.chat.completions.create(
+    model=os.environ["FENNO_MODEL"],
+    messages=[{"role": "user", "content": "Explain streaming in one sentence."}],
+    stream=True,
+)
+for chunk in stream:
+    if chunk.choices:
+        text = chunk.choices[0].delta.content
+        if text:
+            print(text, end="", flush=True)
+print()
+```
+
+## 使用 Responses
+
+对支持 Responses 的模型，可以使用同一个客户端调用 `/v1/responses`。只替换请求方法，不要把 `base_url` 改成完整的 `/responses` 地址：
+
+```python
+response = client.responses.create(
+    model=os.environ["FENNO_MODEL"],
+    input="Reply with OK only.",
+)
+print(response.output_text)
+```
+
+## 迁移检查清单
+
+| 项目 | 需要确认 |
+| --- | --- |
+| 地址字段 | Python 是 `base_url`，JavaScript / TypeScript 是 `baseURL` |
+| 认证字段 | Python 是 `api_key`，JavaScript / TypeScript 是 `apiKey` |
+| 模型 | 使用 Fenno 的精确 ID，不自行添加 `openai/` 等前缀 |
+| 能力 | 工具调用、图片、结构化输出等必须由所选模型支持 |
+| 重试 | 了解 SDK 自带重试，避免和应用层叠加形成大量重复请求 |
+| 验证 | 核对 Fenno 控制台的模型、请求时间与用量 |
+
+<Callout type="warning">
+  这些示例只用于服务端，不要为了在浏览器里运行而开放 API Key。SDK 方法存在不代表 Fenno 支持 OpenAI 的所有托管工具或端点；以本站 API 文档和实际模型能力为准。
+</Callout>
+
+更多接口见 [OpenAI 兼容 API](/zh/api/openai)，错误处理见[错误与重试](/zh/api/errors)。SDK 安装和基础用法参见 [OpenAI 官方文档](https://developers.openai.com/api/docs/quickstart)。

@@ -1,0 +1,55 @@
+---
+title: "FennoAI 概览"
+description: "了解 FennoAI Agent 在 GitHub Issue 与 Pull Request 中的工作方式，查看模型选择、代码修改、审查与自动化任务的使用入口。"
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# FennoAI
+
+FennoAI 是直接参与 GitHub 工作流的编程 Agent。在 Issue 或 Pull Request 中描述需求，让它理解仓库、编写代码、运行测试并发起修改，无需在多个工具间反复搬运上下文。
+
+<div className="fenno-hero">
+  <span className="fenno-hero-badge">FennoAI · Agent</span>
+  <div className="fenno-hero-title">你的 AI 同事，<span className="fenno-gradient-text">就在 GitHub 中</span></div>
+  <p className="fenno-hero-desc">从问题分析到代码实现，从 PR 审查到定时任务，在熟悉的 Issue 和 Pull Request 中完成协作，保留讨论、改动与验证记录。</p>
+</div>
+
+<Cards num={2}>
+  <LinkCard title="快速开始" href="/zh/ai/quick-start">
+    安装 GitHub App，授权仓库，完成第一次 @fennoai 交互。
+  </LinkCard>
+  <LinkCard title="@ 提及模式" href="/zh/ai/mention-mode">
+    用自然语言提问、分析问题或讨论设计，让 Agent 理解任务背景。
+  </LinkCard>
+  <LinkCard title="命令参考" href="/zh/ai/commands">
+    用 /code、/review、/plan 等命令明确指定编码、审查与规划任务。
+  </LinkCard>
+  <LinkCard title="定时任务" href="/zh/ai/scheduled-tasks">
+    通过控制台或仓库配置安排周期性检查、摘要与维护任务。
+  </LinkCard>
+</Cards>
+
+## 工作方式
+
+| 入口 | 常见任务 |
+| --- | --- |
+| GitHub Issue | 分析问题、制定方案、实现修复并发起 PR |
+| GitHub Pull Request | 审查差异、响应反馈、改进现有实现 |
+| 定时任务 | 生成摘要、检查代码与依赖、整理文档 |
+
+## 模型与配置
+
+使用 **Fenno API Key** 访问账户可用的模型，也可以按配置接入其他提供方。FennoAI 支持 Claude、DeepSeek、Gemini、MiniMax、智谱、Kimi 等模型提供方；具体模型与能力以当前账户和配置为准。
+
+- [模型切换](/zh/ai/model-selection)：为不同任务选择模型。
+- [仓库级配置](/zh/ai/configuration)：通过 `.fennoai.yml` 设置仓库默认行为。
+- [Fenno API 文档](/zh/api)：查看模型接口、鉴权与工具接入。
+
+<Callout type="info">
+  Agent 的输出仍需审查。合并前请检查代码差异、测试结果和权限范围；首次尝试可从测试仓库和范围明确的小任务开始。
+</Callout>
+
+## 下一步
+
+第一次使用，从[快速开始](/zh/ai/quick-start)开始。想了解实际工作流，查看[使用场景](/zh/ai/use-cases)；遇到问题，查看[常见问题](/zh/ai/faq)或[提交 Issue](https://github.com/fennoai/docs/issues/new)。

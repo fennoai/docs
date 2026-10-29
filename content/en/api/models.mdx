@@ -1,0 +1,58 @@
+---
+title: "Models and API capabilities"
+description: "Choose a Fenno API model for text, images, tools, structured output or streaming. Check model identifiers, supported protocols and capability requirements."
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# Models & Capabilities
+
+Fenno normalizes provider differences behind a unified protocol layer. You choose a model and a
+capability; auth, error codes and streaming formats are handled for you.
+
+<Callout type="info">
+  The authoritative model list lives in the console and changes as upstream providers open new
+  models. This page documents capabilities and calling conventions, not a static model catalog.
+</Callout>
+
+## Capability matrix
+
+| Capability | Notes | Endpoint |
+| --- | --- | --- |
+| Text generation | Chat, completion, long-form writing, code | `/v1/chat/completions`, `/v1/responses`, `/v1/messages` |
+| Multimodal input | Images, PDFs and other content parts | same (array content) |
+| Tool calls | Function calling / tool use, parallel or multi-turn | same (`tools`) |
+| Structured output | JSON mode or JSON Schema | same (`response_format`) |
+| Reasoning | Long thinking with token accounting | same (model or `reasoning` params) |
+| Prompt caching | Reuse long prefixes to cut cost and latency | same (automatic or explicit markers) |
+| Streaming | SSE deltas, faster first token | same (`stream: true`) |
+| Image generation | Text-to-image and image edits | `/v1/images/generations`, `/v1/images/edits` |
+| Embeddings | Vector representations | `/v1/embeddings` |
+
+## Model identifiers
+
+Identifiers are strings such as `gpt-*`, `claude-*` and `gemini-*`. Recommended practice:
+
+- Keep model names in a config constant, not scattered through code;
+- Pin concrete versions in production to avoid behavior drift;
+- Roll out by key or business dimension rather than random client-side choice.
+
+## Choosing a protocol
+
+<Cards num={2}>
+  <LinkCard title="Existing OpenAI integration" href="/en/api/openai">
+    Change base_url and api_key; request and response shapes stay OpenAI-compatible.
+  </LinkCard>
+  <LinkCard title="Claude Code / Anthropic SDK" href="/en/api/anthropic">
+    Use /v1/messages and keep Messages API content blocks.
+  </LinkCard>
+  <LinkCard title="Gemini SDK / Gemini CLI" href="/en/api/gemini">
+    Use /v1beta/models/* with generateContent and streaming.
+  </LinkCard>
+</Cards>
+
+## Billing
+
+- Input, output and cache reads/writes are billed separately at console prices.
+- Images are billed per image; embeddings per input token.
+- Failed requests that consume no upstream tokens are not billed.

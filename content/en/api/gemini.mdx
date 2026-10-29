@@ -1,0 +1,91 @@
+---
+title: "Gemini API reference"
+description: "Call Gemini-compatible endpoints through Fenno API. Configure API-key authentication, model paths, generateContent and streaming requests."
+---
+
+import { Callout } from 'nextra/components'
+
+# Gemini native API
+
+Base URL: `https://api.fenno.ai`. Paths follow the Google Generative Language API.
+
+## Endpoints
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| POST | `/v1beta/models/{model}:generateContent` | Generate content |
+| POST | `/v1beta/models/{model}:streamGenerateContent` | Streaming generation |
+| GET | `/v1beta/models` | List models |
+| GET | `/v1beta/models/{model}` | Retrieve a model |
+
+## Authentication
+
+```http
+x-goog-api-key: $FENNO_API_KEY
+content-type: application/json
+```
+
+The `?key=` query parameter also works, but headers keep keys out of logs and proxy records.
+
+## Basic call
+
+```bash
+curl "https://api.fenno.ai/v1beta/models/gemini-2.5-flash:generateContent" \
+  -H "x-goog-api-key: $FENNO_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{
+    "contents": [
+      {"role": "user", "parts": [{"text": "Explain vector search in one sentence"}]}
+    ]
+  }'
+```
+
+```ts
+import { GoogleGenAI } from '@google/genai'
+
+const ai = new GoogleGenAI({
+  apiKey: process.env.FENNO_API_KEY,
+  httpOptions: { baseUrl: 'https://api.fenno.ai' }
+})
+
+const res = await ai.models.generateContent({
+  model: 'gemini-2.5-flash',
+  contents: 'Explain vector search in one sentence'
+})
+console.log(res.text)
+```
+
+## Streaming
+
+```ts
+const stream = await ai.models.generateContentStream({
+  model: 'gemini-2.5-flash',
+  contents: 'Explain caching strategy in three points'
+})
+
+for await (const chunk of stream) {
+  process.stdout.write(chunk.text ?? '')
+}
+```
+
+## Request shape
+
+| Field | Purpose |
+| --- | --- |
+| `contents` | Conversation turns with `role` and `parts` |
+| `systemInstruction` | System instruction |
+| `generationConfig` | Temperature, `maxOutputTokens`, `responseMimeType`, … |
+| `tools` | Tools and built-in capabilities |
+| `safetySettings` | Safety thresholds |
+
+<Callout type="info">
+  `parts` supports text, `inlineData` (base64 images/audio) and `fileData` (file references). Model
+  support varies; check the console.
+</Callout>
+
+## Differences from OpenAI
+
+- Messages are `contents` + `parts`, not `messages`.
+- Sampling lives in `generationConfig`.
+- Output is `candidates[0].content.parts`; join text parts yourself.
+- Tool calls appear as `functionCall` / `functionResponse` parts.

@@ -1,0 +1,111 @@
+---
+title: "FennoAI repository configuration"
+description: "Configure FennoAI for a repository with .fennoai.yml. Understand available settings, default-branch configuration and how changes affect later requests."
+---
+
+import { Callout } from 'nextra/components'
+
+# Repository Config
+
+Place a `.fennoai.yml` file in your repository to customize FennoAI's behavior for that specific repo. The file is optional — FennoAI works with sensible defaults without it.
+
+## File Location
+
+The configuration file can be placed in any of the following locations (listed from highest to lowest priority):
+
+```
+your-repo/
+├── .fennoai.yml              ← highest priority
+├── .xgopilot.yml             ← legacy filename
+└── .github/
+    ├── fennoai.yml           ← GitHub-style
+    └── xgopilot.yml          ← legacy filename
+```
+
+FennoAI checks these paths in order and uses the first one found.
+
+## Configurable Options
+
+The repository-level config supports **model settings and execution environment selection**. Sensitive information (API keys, base URLs, etc.) is managed through global configuration and environment variables — not in the repo config.
+
+### Set a Default AI Model
+
+```yaml
+# .fennoai.yml
+default_ai_provider: claude
+```
+
+Supported values: `claude`, `deepseek`, `gemini`, `minimax`, `kimi`, `zhipu`, `codex`
+
+### Select an Execution Environment
+
+Use `environment_id` to select the environment for new Issue/PR task sessions in this repository, including reviews:
+
+```yaml
+# .fennoai.yml
+environment_id: env_xxx
+```
+
+Use an existing AgentAPI environment ID accessible to FennoAI, up to 128 bytes. This overrides the environment in the server's Agent configuration without changing the Agent, runtime, or model selection. Omit the field or use an empty string to keep the server default.
+
+Anyone who can change the default branch configuration can select an environment accessible through the server's AgentAPI credentials. FennoAI does not enforce a separate environment allowlist per repository or organization. Deployment administrators must restrict those credentials to environments authorized for the repositories they serve; a shared credential with access across tenants does not provide repository-level isolation.
+
+Resuming an existing session preserves its original environment. After changing the configuration on the default branch, wait for the repository configuration cache to refresh (platform reads are cached for about 5 minutes), then use `/new` to create a session with the new environment. `/new` does not refresh this cache. Deployments using a legacy local repository cache must update that cache first.
+
+Execution retries keep the selected environment. If the environment is missing, inaccessible, or not ready, session creation fails without falling back to the default. Repository configuration read, parse, or validation errors also stop the task; a missing configuration file still uses the defaults.
+
+This field currently applies to the main Issue/PR task session. Internal outcome-rubric scoring sessions keep their server-configured environment. Console Conversations and scheduled tasks do not use it yet. It does not create, build, or host environments.
+
+### Control Who Can Trigger FennoAI
+
+Use `require_member_to_trigger` to control whether only repository members can trigger `@fennoai` and slash commands.
+
+```yaml
+# .fennoai.yml
+require_member_to_trigger: true
+```
+
+Default behavior when this field is not set:
+
+- Public repository: `true` (member-only trigger)
+
+Common examples:
+
+```yaml
+# Public repo opt-out: allow any user to trigger
+require_member_to_trigger: false
+```
+
+### Customize Model per Provider
+
+You can override the model name for each provider:
+
+```yaml
+# .fennoai.yml
+default_ai_provider: claude
+
+claude:
+  model: 'claude-sonnet-4'
+
+# deepseek:
+#   model: "deepseek/deepseek-v3.2-251201"
+
+# gemini:
+#   model: "gemini-3.0-pro-preview"
+```
+
+<Callout type="warning">
+  **Note**: Provider fields in repository configuration only support model names. API keys, base URLs, and other sensitive settings are managed through global configuration.
+</Callout>
+
+## How Configuration Takes Effect
+
+Most `.fennoai.yml` settings take effect automatically on subsequent requests, with no restart or redeployment required. FennoAI reads the file from the default branch.
+
+If you define `schedule:` tasks, note that:
+
+- scheduled tasks are synchronized after a **push to the default branch**
+- changing config only on a feature branch will not update production scheduled tasks yet
+- see [Scheduled Tasks](/en/ai/scheduled-tasks) for the full behavior
+
+Configuration priority: **Command-line flags > Repository config > Global config**

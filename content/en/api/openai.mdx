@@ -1,0 +1,136 @@
+---
+title: "OpenAI-compatible API reference"
+description: "Use Fenno API for Chat Completions, Responses, embeddings and images. Find endpoint paths, request examples, streaming guidance and model discovery."
+---
+
+import { Callout, Tabs } from 'nextra/components'
+
+# OpenAI-compatible API
+
+Base URL: `https://api.fenno.ai/v1`. Endpoints follow the OpenAI protocol, so the official SDK
+works unchanged.
+
+## Endpoints
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| POST | `/chat/completions` | Chat completions, widest compatibility |
+| POST | `/responses` | Instructions/input separated, cache friendly |
+| POST | `/embeddings` | Text embeddings |
+| POST | `/images/generations` | Text-to-image |
+| POST | `/images/edits` | Image editing |
+| GET | `/models` | List models |
+| GET | `/models/{model}` | Retrieve a model |
+
+## Chat Completions
+
+```http
+POST https://api.fenno.ai/v1/chat/completions
+Authorization: Bearer $FENNO_API_KEY
+Content-Type: application/json
+```
+
+Key parameters:
+
+| Parameter | Type | Notes |
+| --- | --- | --- |
+| `model` | string | Required |
+| `messages` | array | Required |
+| `stream` | boolean | SSE streaming |
+| `temperature` | number | Sampling temperature |
+| `max_tokens` | number | Max output tokens |
+| `tools` | array | Function calling definitions |
+| `tool_choice` | string \| object | Tool selection strategy |
+| `response_format` | object | JSON mode or JSON Schema |
+| `reasoning` | object | Reasoning effort and related options |
+
+<Tabs items={['Streaming', 'Non-streaming']}>
+  <Tabs.Tab>
+    ```python
+    stream = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": "Write a 10-word tagline"}],
+        stream=True,
+    )
+    for chunk in stream:
+        delta = chunk.choices[0].delta.content
+        if delta:
+            print(delta, end="", flush=True)
+    ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    ```python
+    resp = client.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[{"role": "user", "content": "Write a 10-word tagline"}],
+    )
+    print(resp.choices[0].message.content)
+    ```
+  </Tabs.Tab>
+</Tabs>
+
+## Responses
+
+`/responses` separates `instructions` from `input`, which improves prompt-cache hits for long system
+prompts and suits long-running production applications.
+
+```python
+resp = client.responses.create(
+    model="gpt-4o-mini",
+    instructions="You are a rigorous technical writer.",
+    input="Explain prompt caching in three sentences.",
+)
+print(resp.output_text)
+```
+
+## Embeddings
+
+```http
+POST https://api.fenno.ai/v1/embeddings
+```
+
+```python
+resp = client.embeddings.create(
+    model="text-embedding-3-small",
+    input=["first passage", "second passage"],
+)
+print(len(resp.data[0].embedding))
+```
+
+## Image generation
+
+```http
+POST https://api.fenno.ai/v1/images/generations
+```
+
+| Parameter | Type | Notes |
+| --- | --- | --- |
+| `model` | string | Image model identifier |
+| `prompt` | string | Scene description |
+| `size` | string | Output size, e.g. `1024x1024` |
+| `n` | number | Number of images |
+| `quality` | string | Quality tier, model dependent |
+
+Image edits use `/images/edits` with `multipart/form-data`:
+
+```bash
+curl https://api.fenno.ai/v1/images/edits \
+  -H "Authorization: Bearer $FENNO_API_KEY" \
+  -F "model=<image-model>" \
+  -F "prompt=replace the background with pure white" \
+  -F "image=@./input.png"
+```
+
+<Callout type="info">
+  Available image models and supported sizes are listed in the console. Support for `quality`,
+  `style` and similar parameters varies by model; unsupported values may be ignored or rejected.
+</Callout>
+
+## List models
+
+```bash
+curl https://api.fenno.ai/v1/models \
+  -H "Authorization: Bearer $FENNO_API_KEY"
+```
+
+The response follows OpenAI's `List Models` shape and can drive capability discovery at startup.

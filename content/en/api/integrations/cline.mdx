@@ -1,0 +1,45 @@
+---
+title: "Cline with Fenno API"
+description: "Connect Cline to Fenno API through OpenAI Compatible settings. Enter the base URL, API key and exact model ID, then test a conversation and tool use."
+---
+
+# Cline
+
+Cline offers an OpenAI Compatible provider with minimal configuration.
+
+## Steps
+
+1. Open Cline settings and select **OpenAI Compatible** as the API provider.
+2. Fill in:
+
+| Field | Value |
+| --- | --- |
+| Base URL | `https://api.fenno.ai/v1` |
+| API Key | Your Fenno key |
+| Model ID | A model id from the console |
+
+3. Save and run one conversation to verify.
+
+## Tips
+
+- Prefer models with long context and tool support for coding.
+- Cap output tokens in Cline to bound per-call cost.
+- When several projects share a key, use per-key usage views to attribute spend.
+
+
+## Verify the first request
+
+Save and enable the provider, then start a test conversation with “Reply with OK only. Do not modify files.” Match the time and model in the Fenno console, then test tools separately in a disposable repository.
+
+If your version stores separate models for Plan and Act modes, check both configurations so that switching modes does not silently restore a different provider.
+
+## Capabilities and troubleshooting
+
+| Symptom | Check |
+| --- | --- |
+| Model unavailable | Use an exact ID, not a display name or an invented provider prefix |
+| Authentication failure | Check the key and active mode's provider without exposing credentials in logs |
+| Tool or image requests fail | Enable capabilities supported by the selected model, not every option |
+| Context or output limit errors | Use actual model limits rather than copied defaults |
+
+See the [official Cline OpenAI Compatible guide](https://docs.cline.bot/provider-config/openai-compatible).

@@ -1,0 +1,58 @@
+---
+title: "Fenno API：模型服务"
+description: "了解 Fenno API 模型服务，使用统一 API Key 连接 OpenAI、Anthropic 与 Gemini 兼容接口，查看基础地址、接入步骤及工具配置指南。"
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# Fenno API
+
+Fenno API是一个统一的 AI 模型接入网关：用一个 API Key 接入 GPT、Claude、Gemini 等主流模型，兼容 OpenAI、Anthropic、Gemini 三套协议，已有工具和 SDK 通常只需要替换 `base_url` 与 `api_key`。
+
+<div className="fenno-hero">
+  <span className="fenno-hero-badge">Fenno API · 多协议兼容</span>
+  <div className="fenno-hero-title">一个 Key，接通<span className="fenno-gradient-text">全部主流模型</span></div>
+  <p className="fenno-hero-desc">面向编码工具与生产应用：同一份 Key 同时服务 Codex、Claude Code、Cursor、Cline、OpenCode 以及你自己的后端服务；用量、额度、账单统一收敛。</p>
+</div>
+
+<Cards num={2}>
+  <LinkCard title="快速开始" href="/zh/api/quickstart">
+    5 分钟完成第一个请求：创建 Key、配置 base URL、跑通对话补全。
+  </LinkCard>
+  <LinkCard title="鉴权方式" href="/zh/api/authentication">
+    OpenAI、Anthropic、Gemini 三种协议的认证 Header 与 SDK 配置。
+  </LinkCard>
+  <LinkCard title="模型与能力" href="/zh/api/models">
+    推理、多模态输入、工具调用、结构化输出、提示缓存与图像生成。
+  </LinkCard>
+  <LinkCard title="API 参考" href="/zh/api/openai">
+    对话补全、Responses、Embeddings、图像生成等端点说明。
+  </LinkCard>
+</Cards>
+
+## 基础地址
+
+所有请求统一使用以下 Base URL：
+
+```text
+https://api.fenno.ai/v1
+```
+
+<Callout type="info">
+  兼容层路径与官方协议保持一致：`/v1/chat/completions`、`/v1/responses`、
+  `/v1/messages`、`/v1beta/models/*` 等，把原有的 `base_url` 换成上面的地址即可。
+</Callout>
+
+## 支持的协议
+
+| 协议 | 典型调用方 | 端点前缀 |
+| --- | --- | --- |
+| OpenAI 兼容 | OpenAI SDK、Codex、Cline、OpenCode、LangChain | `/v1/*` |
+| Anthropic 原生 | Claude Code、Anthropic SDK | `/v1/messages` |
+| Gemini 原生 | Gemini CLI、Google GenAI SDK | `/v1beta/models/*` |
+
+## 下一步
+
+- 第一次接入：从[快速开始](/zh/api/quickstart)开始。
+- 已经有 Key：直接看[鉴权方式](/zh/api/authentication)。
+- 排查问题：[错误与重试](/zh/api/errors)。

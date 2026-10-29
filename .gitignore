@@ -1,0 +1,12 @@
+node_modules/
+.next/
+out/
+
+# next dev 自动生成的 agent 规则文件
+AGENTS.md
+
+*.log
+*.tsbuildinfo
+.DS_Store
+
+reference/*

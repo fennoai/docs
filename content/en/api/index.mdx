@@ -1,0 +1,58 @@
+---
+title: "Fenno API: model API service"
+description: "Connect applications and coding tools to Fenno API using OpenAI, Anthropic or Gemini protocols. Start with API keys, base URLs and your first request."
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# Fenno API
+
+Fenno API is a unified AI model gateway: one API key for GPT, Claude, Gemini and other
+mainstream models, with native compatibility for the OpenAI, Anthropic and Gemini protocols. Most
+tools and SDKs only need a new `base_url` and `api_key`.
+
+<div className="fenno-hero">
+  <span className="fenno-hero-badge">Fenno API · Three protocols</span>
+  <div className="fenno-hero-title">One key, every<span className="fenno-gradient-text"> mainstream model</span></div>
+  <p className="fenno-hero-desc">The same key serves Codex, Claude Code, Cursor, Cline and OpenCode as well as your own backend, with usage, quota and billing consolidated in one place.</p>
+</div>
+
+<Cards num={2}>
+  <LinkCard title="Quickstart" href="/en/api/quickstart">
+    First request in five minutes: create a key, point your SDK at Fenno, run a completion.
+  </LinkCard>
+  <LinkCard title="Authentication" href="/en/api/authentication">
+    Auth headers and SDK setup for the OpenAI, Anthropic and Gemini protocols.
+  </LinkCard>
+  <LinkCard title="Models & capabilities" href="/en/api/models">
+    Reasoning, multimodal input, tool calls, structured output, prompt caching and image generation.
+  </LinkCard>
+  <LinkCard title="API reference" href="/en/api/openai">
+    Chat Completions, Responses, Embeddings, image generation and more.
+  </LinkCard>
+</Cards>
+
+## Base URL
+
+```text
+https://api.fenno.ai/v1
+```
+
+<Callout type="info">
+  Paths match the official protocols (`/v1/chat/completions`, `/v1/responses`, `/v1/messages`,
+  `/v1beta/models/*`), so migrating usually means replacing `base_url` only.
+</Callout>
+
+## Supported protocols
+
+| Protocol | Typical callers | Path prefix |
+| --- | --- | --- |
+| OpenAI compatible | OpenAI SDK, Codex, Cline, OpenCode, LangChain | `/v1/*` |
+| Anthropic native | Claude Code, Anthropic SDK | `/v1/messages` |
+| Gemini native | Gemini CLI, Google GenAI SDK | `/v1beta/models/*` |
+
+## Next steps
+
+- New to Fenno? Start with [Quickstart](/en/api/quickstart).
+- Already have a key? Read [Authentication](/en/api/authentication).
+- Debugging? See [Errors & retries](/en/api/errors).

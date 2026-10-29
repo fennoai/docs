@@ -1,0 +1,147 @@
+---
+title: "FennoAI command reference"
+description: "Explore FennoAI commands for coding, reviews and planning. Learn command syntax and examples for directing agent tasks inside GitHub workflows."
+---
+
+# Commands
+
+FennoAI supports slash commands for structured, outcome-driven tasks. Each command is designed for a specific scenario — use the right one and you'll get a more precise result.
+
+## Quick Reference
+
+| Command     | Where        | What it does                             |
+| ----------- | ------------ | ---------------------------------------- |
+| `/code`     | Issues / PRs | Write code and open a PR                 |
+| `/plan`     | Issues       | Generate an implementation plan          |
+| `/review`   | PRs          | Perform a thorough code review           |
+| `/simplify` | PRs          | Simplify and refactor PR code            |
+| `/compact`  | Issues / PRs | Summarize progress and clean up comments |
+| `/close`    | Issues / PRs | Close the issue or PR                    |
+
+---
+
+## `/code` — Write Code
+
+**One-line summary**: Turn a description into a real pull request.
+
+**When to use it**:
+
+- The issue is clear enough and you want AI to write the implementation
+- A PR review left comments that need to be addressed — ask FennoAI to make the changes
+
+**Usage**:
+
+```text
+/code
+
+The search endpoint doesn't support filtering by date range.
+Add a `from` and `to` query parameter to GET /api/search.
+```
+
+After submitting, FennoAI will clone the repo, write the code, run tests, and open a PR.
+
+---
+
+## `/plan` — Design First
+
+**One-line summary**: Get an implementation plan before writing any code.
+
+**When to use it**:
+
+- The requirement is complex and the team needs to align before coding starts
+- You're unsure about the technical approach and want AI to analyze the options
+
+**Usage**:
+
+```text
+/plan
+
+We need to migrate from JWT to session-based auth.
+The existing User model should remain compatible.
+Please outline the approach and list which files will change.
+```
+
+FennoAI responds with: architecture decisions, file-level change list, migration strategy, and risk notes. Once the team agrees, follow up with `/code` to implement.
+
+---
+
+## `/review` — Code Review
+
+**One-line summary**: Get a thorough AI code review on a PR.
+
+**When to use it**:
+
+- A PR is ready for review and you want a second opinion before human reviewers look at it
+- You want to catch security issues, performance problems, or logic bugs early
+
+**Usage**:
+
+```text
+/review
+```
+
+Or focus the review:
+
+```text
+/review Focus on the database transaction handling.
+```
+
+FennoAI reviews the diff for bugs, security vulnerabilities, performance issues, and code quality, then leaves inline comments.
+
+---
+
+## `/simplify` — Refactor
+
+**One-line summary**: Simplify overly complex code in a PR.
+
+**When to use it**:
+
+- The PR has working code but it's too verbose or hard to follow
+- A function has grown too large and needs splitting
+
+**Usage**:
+
+```text
+/simplify The PaymentProcessor class is too large.
+Please split it into smaller, focused functions.
+```
+
+FennoAI rewrites the code for clarity and pushes the changes to the existing PR branch.
+
+---
+
+## `/compact` — Summarize & Reset
+
+**One-line summary**: Summarize the current state of an Issue or PR and clean up bot comments.
+
+**When to use it**:
+
+- An Issue or PR has accumulated many comments and the current status is unclear
+- After multiple rounds of AI interaction, you want a fresh context window
+
+**Usage**:
+
+```text
+/compact
+```
+
+FennoAI produces a summary comment covering what's been decided, what's pending, and what the next step is. Previous bot comments are cleaned up.
+
+---
+
+## `/close` — Close
+
+**One-line summary**: Let AI verify the issue is resolved and close it.
+
+**When to use it**:
+
+- An Issue has been addressed by a merged PR and you want AI to confirm and close it
+- A PR is no longer needed
+
+**Usage**:
+
+```text
+/close The fix was merged in PR #234.
+```
+
+FennoAI verifies the context and closes the Issue or PR with a summary comment.

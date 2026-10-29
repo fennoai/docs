@@ -1,0 +1,65 @@
+---
+title: "FennoAI quick start"
+description: "Install the FennoAI GitHub app, select a repository and mention @fennoai to start your first coding task without deploying your own server."
+---
+
+import { Callout, Cards, Steps } from 'nextra/components'
+
+# Quick Start
+
+The fastest way to get started is through the **FennoAI GitHub App** — no server setup, no configuration files.
+
+## GitHub App (Recommended)
+
+<Steps>
+
+### Install the GitHub App
+
+Visit [github.com/apps/fennoai](https://github.com/apps/fennoai) and click **Install**. Select the repositories you want FennoAI to work in.
+
+### Open an Issue or PR
+
+Go to any Issue or PR in your repository.
+
+### Mention FennoAI
+
+Leave a comment mentioning `@fennoai`:
+
+```text
+@fennoai hello, can you analyze this repository structure?
+```
+
+### Wait for the response
+
+FennoAI replies in the same thread. You'll see its progress as it reads the repository and works on the request.
+
+### Try a real task
+
+Once you've confirmed it's working, try a meaningful task:
+
+```text
+/code fix the bug described in this issue
+```
+
+That's it. FennoAI will clone your repo, write the fix, and open a PR for your review.
+
+</Steps>
+
+## What's Next
+
+<Cards num={2}>
+<LinkCard title="Mention Mode" href="/en/ai/mention-mode">
+  Learn when and how to use `@fennoai` for free-form requests
+</LinkCard>
+<LinkCard title="Commands" href="/en/ai/commands">
+  See all slash commands and when to use each one
+</LinkCard>
+<LinkCard title="Model Selection" href="/en/ai/model-selection">
+  Choose different AI models for different tasks
+</LinkCard>
+
+</Cards>
+
+<Callout type="info">
+  Need help? Report documentation issues on [GitHub](https://github.com/fennoai/docs/issues/new) or join [Discord](https://discord.gg/9HFMKz4qrg). Keep credentials and private code out of public reports.
+</Callout>

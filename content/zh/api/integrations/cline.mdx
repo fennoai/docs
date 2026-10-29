@@ -1,0 +1,45 @@
+---
+title: "Cline 接入 Fenno API"
+description: "使用 Cline 的 OpenAI Compatible 提供方接入 Fenno API，填写 Base URL、API Key 与精确模型 ID，并验证对话和工具调用。"
+---
+
+# Cline 接入
+
+Cline 支持 OpenAI Compatible 提供方，配置项较少。
+
+## 配置步骤
+
+1. 打开 Cline 设置，**API Provider** 选择 **OpenAI Compatible**。
+2. 填写：
+
+| 配置项 | 值 |
+| --- | --- |
+| Base URL | `https://api.fenno.ai/v1` |
+| API Key | 你的 Fenno Key |
+| Model ID | 控制台可用的模型标识 |
+
+3. 保存后发起一次对话验证。
+
+## 建议
+
+- 编码场景优先选择支持长上下文与工具调用的模型。
+- 需要限制单次消耗时，在 Cline 里设置最大输出 token。
+- 多项目共用同一 Key 时，用控制台的按 Key 用量视图区分成本。
+
+
+## 首次验证
+
+保存设置并启用提供方，新建一个测试会话，发送“只回复 OK，不修改文件”。在 Fenno 控制台核对请求时间与模型，再在临时仓库中单独测试工具调用。
+
+如果你的版本分别保存 Plan / Act 模式的模型配置，检查两种模式实际选用的提供方，避免切换后又回到旧模型。
+
+## 能力与排错
+
+| 现象 | 检查内容 |
+| --- | --- |
+| 模型不可用 | 使用精确模型 ID，不要填写展示名称或推测厂商前缀 |
+| 认证失败 | 核对 Key 来源和当前模式的提供方，不要在日志中暴露完整 Key |
+| 工具或图片请求失败 | 按模型实际能力配置，不要将所有能力开关都打开 |
+| 上下文或输出超限 | 使用模型真实上限，不照搬其他模型的参数 |
+
+参考 [Cline 官方 OpenAI Compatible 配置](https://docs.cline.bot/provider-config/openai-compatible)。

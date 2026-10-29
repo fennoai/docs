@@ -1,0 +1,95 @@
+---
+title: "API errors and retries"
+description: "Diagnose Fenno API authentication, model, quota and timeout errors. Read HTTP status codes and apply safe retry strategies without duplicate requests."
+---
+
+import { Callout } from 'nextra/components'
+
+# Errors & Retries
+
+## Error shapes
+
+OpenAI-compatible endpoints:
+
+```json
+{
+  "error": {
+    "message": "Invalid API key",
+    "type": "invalid_request_error",
+    "code": "invalid_api_key"
+  }
+}
+```
+
+Anthropic endpoints:
+
+```json
+{
+  "type": "error",
+  "error": { "type": "authentication_error", "message": "invalid x-api-key" }
+}
+```
+
+Gemini endpoints:
+
+```json
+{
+  "error": {
+    "code": 400,
+    "message": "API key not valid",
+    "status": "INVALID_ARGUMENT"
+  }
+}
+```
+
+## Status codes
+
+| Status | Meaning | Retry? |
+| --- | --- | --- |
+| `400` | Invalid request | No — fix the request |
+| `401` | Key invalid, deleted or disabled | No — check the key |
+| `403` | Model not permitted or blocked by policy | No |
+| `404` | Unknown path or model | No — check base URL and model id |
+| `402` | Quota exhausted | No — top up or adjust limits |
+| `408` | Upstream timeout | Yes |
+| `429` | Rate limited | Yes, with backoff |
+| `5xx` | Upstream or gateway error | Yes |
+
+<Callout type="info">
+  Only retry requests that are safe to replay. Once a streaming response has emitted content, a
+  retry can duplicate output — retry before the first token only.
+</Callout>
+
+## Backoff
+
+Exponential backoff with jitter:
+
+```python
+import random, time
+
+def backoff(attempt: int) -> float:
+    base = min(2 ** attempt, 30)
+    return base * (0.5 + random.random() / 2)
+
+for attempt in range(5):
+    try:
+        resp = call()
+        break
+    except RetryableError:
+        if attempt == 4:
+            raise
+        time.sleep(backoff(attempt))
+```
+
+## Rate limits
+
+- Limits apply per account, key and model.
+- Response headers report remaining quota and reset times when upstream exposes them — read them
+  instead of retrying blindly.
+- Need more concurrency? Contact support; do not work around limits with extra keys.
+
+## Debugging checklist
+
+1. Reproduce with `curl` to rule out SDK issues.
+2. Verify the version prefix (`/v1` for OpenAI, `/v1beta` for Gemini).
+3. Log request IDs and status codes for support tickets.

@@ -1,0 +1,42 @@
+---
+title: "Choose a FennoAI model"
+description: "Choose and switch the model used by FennoAI. Understand supported providers, model naming and configuration for coding and review tasks."
+---
+
+# Model Selection
+
+You can switch between AI models by adding a `-<model>` flag to any command or mention.
+
+## How to Use
+
+Append the model flag at the end of any command:
+
+```text
+/code -gemini fix the login bug
+/review -claude
+@fennoai -deepseek explain why this function is slow
+```
+
+## Supported Model Flags
+
+| Flag        | Details                                                 |
+| ----------- | ------------------------------------------------------- |
+| `-claude`   | Use Anthropic Claude's latest model to execute the task |
+| `-gemini`   | Use Google Gemini's latest model to execute the task    |
+| `-deepseek` | Use DeepSeek's latest model to execute the task         |
+| `-minimax`  | Use MiniMax's latest model to execute the task          |
+| `-zhipu`    | Use Zhipu GLM's latest model to execute the task        |
+| `-kimi`     | Use Moonshot Kimi's latest model to execute the task    |
+| `-codex`    | Use OpenAI Codex's latest model to execute the task     |
+
+## Default Model
+
+If no flag is specified, FennoAI uses the default model configured for your deployment or repository.
+
+You can set a per-repository default in `.fennoai.yml`:
+
+```yaml
+default_ai_provider: claude
+```
+
+See [Repository Config →](/en/ai/configuration) for details.

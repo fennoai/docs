@@ -1,0 +1,78 @@
+---
+title: "Codex 接入 Fenno API"
+description: "在 Codex 中使用 Fenno API 的 Responses 接口，配置用户级 config.toml、环境变量与模型 ID，验证连通后再测试编码任务。"
+---
+
+import { Callout } from 'nextra/components'
+
+# Codex 接入
+
+Codex 使用 OpenAI **Responses API**。接入时不仅要替换地址和 Key，还要选择支持 Responses、流式输出与工具调用的模型。
+
+## 1. 安装并确认版本
+
+```bash
+npm install -g @openai/codex
+codex --version
+```
+
+系统要求和其他安装方式见 [Codex 官方文档](https://developers.openai.com/codex/cli/)。
+
+## 2. 配置 Fenno 提供商
+
+备份并编辑**用户级** `~/.codex/config.toml`。合并以下字段，保留已有 MCP、权限与其他供应商配置；不要把文件整体覆盖掉。
+
+```toml filename="~/.codex/config.toml"
+model = "<YOUR_MODEL_ID>"
+model_provider = "fenno"
+
+[model_providers.fenno]
+name = "Fenno"
+base_url = "https://api.fenno.ai/v1"
+env_key = "FENNO_API_KEY"
+wire_api = "responses"
+requires_openai_auth = false
+```
+
+把 `<YOUR_MODEL_ID>` 替换为控制台中支持 Responses 的精确模型 ID。提供商名称 `fenno` 是本地配置标识，不需要加到 `model` 字段前。
+
+<Callout type="info">
+  提供商和认证设置放在用户配置中，不要放进项目的 `.codex/config.toml`。当前 Codex 会忽略项目级的提供商设置，避免项目重定向你的凭据。
+</Callout>
+
+## 3. 设置 Key
+
+macOS / Linux / WSL 使用第一段，Windows PowerShell 使用第二段。环境变量必须存在于**启动 Codex 的同一个终端**中：
+
+```bash
+export FENNO_API_KEY="<YOUR_FENNO_API_KEY>"
+```
+
+```powershell
+$env:FENNO_API_KEY = "<YOUR_FENNO_API_KEY>"
+```
+
+本例使用 `env_key`，无需把 Fenno Key 写入 `auth.json`，也不要把它用于 OpenAI 官方登录。
+
+## 4. 验证首次请求
+
+进入已有的测试 Git 仓库，先进行不会改文件的请求：
+
+```bash
+cd your-test-project
+codex exec "Reply with OK only. Do not read or modify files."
+```
+
+核对启动信息中的提供商和模型，并在 Fenno 控制台确认对应时间的请求。再用一个临时文件测试工具调用；收到文本回复不代表完整编码流程已验证。
+
+## 常见问题
+
+| 现象 | 处理 |
+| --- | --- |
+| 提示缺少环境变量 | 在启动终端设置 `FENNO_API_KEY`；桌面应用不一定继承终端环境 |
+| 仍使用原来的提供商 | 检查用户配置、启动参数和正在使用的配置 profile，重开会话 |
+| 404 / 模型不存在 | 检查精确 ID、Responses 支持及 Base URL，不能填 `/chat/completions` |
+| 401 / 403 | 检查 Key 与账户权限，不要切换成 OpenAI 官方认证来“修复”网关 Key |
+| 文本正常但工具失败 | 单独检查模型工具调用能力和响应内容；不要关闭安全审批绕过问题 |
+
+详细配置参见 [OpenAI 官方高级配置](https://learn.chatgpt.com/docs/config-file/config-advanced#custom-model-providers)。其他连接问题见[通用排错](/zh/api/integrations/others)。

@@ -1,0 +1,53 @@
+---
+title: "Chatbox with Fenno API"
+description: "Set up a custom Fenno API provider in Chatbox. Distinguish API host, base URL and request path, add exact model IDs and troubleshoot connection errors."
+---
+
+import { Callout } from 'nextra/components'
+
+# Chatbox
+
+[Chatbox](https://chatboxai.app) supports custom model providers. Use OpenAI-compatible mode; you do not need a built-in gateway brand entry.
+
+## 1. Add a provider
+
+Open **Settings → Model Provider → Add**. Name it `Fenno` and choose **OpenAI API Compatible**.
+
+## 2. Enter the address and key
+
+Some versions expose separate Host and Path fields; others use a single Base URL. Follow the fields shown in your client:
+
+| Field | Value |
+| --- | --- |
+| API Host, when separate from Path | `https://api.fenno.ai` |
+| API Path, when configured separately | `/v1/chat/completions` |
+| Base URL, when no separate Path is provided | `https://api.fenno.ai/v1` |
+| API key | Your Fenno API key |
+
+**The final chat request must target `https://api.fenno.ai/v1/chat/completions`.** For a 404, check the assembled URL instead of adding `/v1` to every field.
+
+## 3. Add a model
+
+Fetch the model list and add the models you need, or enter an exact model ID from the console manually. Display names are customizable; the ID sent to the API must match.
+
+Save, then choose a model under **Fenno** in the conversation's model picker. Do not leave the previous default provider selected.
+
+## 4. Test the connection
+
+Run **Check**, then start a new conversation with “Reply with OK only”. Match the request time and model in the Fenno console to verify the provider actually used.
+
+<Callout type="warning">
+  Working text chat does not guarantee image generation, web search or tool calling. Those features also depend on the Chatbox version, protocol and model. Disable extras while diagnosing basic connectivity.
+</Callout>
+
+## Troubleshooting
+
+| Symptom | Action |
+| --- | --- |
+| 404 | Check for duplicated `/v1` or `/chat/completions` in Host and Path |
+| 401 | Check the key source and full value, then save the provider again |
+| Model missing from the picker | Add and enable it, using an exact ID if discovery fails |
+| Check succeeds but chat fails | Check the conversation's provider, model and extra feature settings |
+| Only older conversations work | Test a new conversation without inherited model settings |
+
+See the [official Chatbox custom provider guide](https://chatboxai.app/en).

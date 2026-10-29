@@ -1,0 +1,92 @@
+---
+title: "Gemini API 参考"
+description: "通过 Fenno API 使用 Gemini 兼容接口，配置 API Key、模型路径与 generateContent 请求，并查看流式调用和参数示例。"
+---
+
+import { Callout } from 'nextra/components'
+
+# Gemini 原生 API
+
+Base URL：`https://api.fenno.ai`。端点路径与 Google Generative Language API 保持一致。
+
+## 端点一览
+
+| 方法 | 路径 | 说明 |
+| --- | --- | --- |
+| POST | `/v1beta/models/{model}:generateContent` | 生成内容 |
+| POST | `/v1beta/models/{model}:streamGenerateContent` | 流式生成 |
+| GET | `/v1beta/models` | 模型列表 |
+| GET | `/v1beta/models/{model}` | 单个模型信息 |
+
+## 认证
+
+```http
+x-goog-api-key: $FENNO_API_KEY
+content-type: application/json
+```
+
+也可以用查询参数：`?key=$FENNO_API_KEY`。生产环境建议使用 Header，避免 Key 出现在日志与
+代理记录里。
+
+## 基本调用
+
+```bash
+curl "https://api.fenno.ai/v1beta/models/gemini-2.5-flash:generateContent" \
+  -H "x-goog-api-key: $FENNO_API_KEY" \
+  -H "content-type: application/json" \
+  -d '{
+    "contents": [
+      {"role": "user", "parts": [{"text": "用一句话解释向量检索"}]}
+    ]
+  }'
+```
+
+```ts
+import { GoogleGenAI } from '@google/genai'
+
+const ai = new GoogleGenAI({
+  apiKey: process.env.FENNO_API_KEY,
+  httpOptions: { baseUrl: 'https://api.fenno.ai' }
+})
+
+const res = await ai.models.generateContent({
+  model: 'gemini-2.5-flash',
+  contents: '用一句话解释向量检索'
+})
+console.log(res.text)
+```
+
+## 流式响应
+
+```ts
+const stream = await ai.models.generateContentStream({
+  model: 'gemini-2.5-flash',
+  contents: '分三点说明缓存策略'
+})
+
+for await (const chunk of stream) {
+  process.stdout.write(chunk.text ?? '')
+}
+```
+
+## 请求结构
+
+| 字段 | 说明 |
+| --- | --- |
+| `contents` | 对话内容，元素包含 `role` 与 `parts` |
+| `systemInstruction` | 系统指令 |
+| `generationConfig` | 温度、`maxOutputTokens`、`responseMimeType` 等 |
+| `tools` | 工具与内置能力声明 |
+| `safetySettings` | 安全阈值 |
+
+<Callout type="info">
+  `parts` 支持文本、`inlineData`（base64 图片/音频）、`fileData`（文件引用）等形态。
+  模型支持范围以控制台为准。
+</Callout>
+
+## 与 OpenAI 协议的差异
+
+- 消息使用 `contents` + `parts`，不是 `messages`。
+- 采样参数位于 `generationConfig`，不是顶层字段。
+- 输出为 `candidates[0].content.parts`，需要自行拼接文本部分。
+- 工具调用通过 `functionCall` / `functionResponse` part 表达。

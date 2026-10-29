@@ -1,0 +1,62 @@
+---
+title: "General integration troubleshooting"
+description: "Configure Fenno API in other compatible tools. Match hosts, base URLs, endpoints and credentials, then diagnose authentication, model and streaming issues."
+---
+
+import { Callout } from 'nextra/components'
+
+# General setup and troubleshooting
+
+For tools without a dedicated guide, first check that they allow a custom API address, credentials and model ID. A claim of “OpenAI compatibility” does not establish support for every client feature.
+
+## Host, base URL and endpoint
+
+- **Host**: the scheme and domain, such as `https://api.fenno.ai`.
+- **Base URL**: the prefix to which a client appends operation paths. The OpenAI SDK uses `https://api.fenno.ai/v1`.
+- **Full endpoint**: includes an operation, such as `https://api.fenno.ai/v1/chat/completions`.
+
+| Protocol | Typical base URL | Final request path | Authentication |
+| --- | --- | --- | --- |
+| OpenAI Chat Completions | `https://api.fenno.ai/v1` | `/v1/chat/completions` | `Authorization: Bearer` |
+| OpenAI Responses | `https://api.fenno.ai/v1` | `/v1/responses` | `Authorization: Bearer` |
+| Anthropic Messages | `https://api.fenno.ai` | `/v1/messages` | Either `x-api-key` or Bearer |
+| Gemini | `https://api.fenno.ai` | `/v1beta/models/{model}:generateContent` | `x-goog-api-key` |
+
+These base URLs assume the client appends the corresponding path. If it asks for a full endpoint, enter the complete request URL instead. Do not duplicate the version segment. See [authentication](/en/api/authentication).
+
+## Setup checklist
+
+1. Choose a custom provider with an explicit protocol type.
+2. Enter the API address and Fenno key. The key is not a model ID.
+3. Copy an exact model ID from the console or `/v1/models`; do not invent a provider prefix.
+4. Save and enable the provider, then select it in the **current conversation**.
+5. Send a minimal text request and check the corresponding Fenno usage record.
+6. Enable streaming, images and tools one at a time.
+
+## Isolate account and URL problems
+
+This request checks authentication and model discovery on the OpenAI-compatible endpoint. It does not test every model capability:
+
+```bash
+export FENNO_API_KEY="<YOUR_FENNO_API_KEY>"
+curl --fail-with-body https://api.fenno.ai/v1/models \
+  -H "Authorization: Bearer $FENNO_API_KEY"
+```
+
+| Symptom | Check first |
+| --- | --- |
+| 401 / 403 | Key validity, account permissions and conflicting older credentials |
+| 404 | Duplicated path segments, exact model ID and protocol match |
+| 400 | Remove extra parameters and test the smallest supported request |
+| 429 / insufficient quota | Read the error and check quota; follow [errors and retries](/en/api/errors) |
+| Timeout | Network, proxies, certificates and client timeout; avoid duplicating long-running tasks |
+| Replies without Fenno usage | The conversation may still use a default provider; check the account, time and route |
+| Text works but tools fail | Test tool arguments, model capability and tool-result messages separately |
+
+## Security and support
+
+<Callout type="warning">
+  Do not put API keys in public repositories, screenshots or frontend code. Never post complete environment variables, authentication headers or unredacted logs in public issues.
+</Callout>
+
+Include the tool and version, OS, protocol, exact model ID, request time and timezone, HTTP status, and any returned request ID in a support report. Remove keys, private prompts and project content before sharing a minimal reproduction.

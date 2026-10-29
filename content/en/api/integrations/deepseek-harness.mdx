@@ -1,0 +1,68 @@
+---
+title: "DeepSeek Harness with Fenno API"
+description: "Add Fenno API as a custom provider in DeepSeek Harness (dsh). Configure model protocols in the Web UI, select a workspace and troubleshoot credentials."
+---
+
+import { Callout } from 'nextra/components'
+
+# DeepSeek Harness
+
+[DeepSeek Harness](https://github.com/deepseek-ai/deepseek-harness), or `dsh`, connects to custom providers through model plugins. This guide adds Fenno API in the Web UI without replacing the built-in DeepSeek provider.
+
+<Callout type="warning">
+  dsh evolves quickly. Older `settings.yaml` examples may not apply to current versions. Prefer the Models settings UI; for file edits, follow the active profile's configuration and current official documentation.
+</Callout>
+
+## 1. Install and start
+
+Check runtime requirements in the [official repository](https://github.com/deepseek-ai/deepseek-harness), then install, check the version and start the local UI:
+
+```bash
+npm install -g @deepseek-ai/dsh
+dsh --version
+dsh web
+```
+
+Use the local URL printed in the terminal. If it contains an access token, do not share it publicly or expose the service to the internet.
+
+## 2. Add a custom provider
+
+Open **Settings → Models → Add custom provider**:
+
+| Setting | Value |
+| --- | --- |
+| Provider ID | `fenno` |
+| Display name | `Fenno API` |
+| API address | `https://api.fenno.ai/v1` |
+| API protocol | `openai-completions` |
+| API key | Your Fenno API key |
+
+Fetch and add models, or enter an exact model ID manually. Choose a model supporting Chat Completions and tool calling; do not infer IDs from display names.
+
+## 3. Select a model and workspace
+
+Save, then select a model under **Fenno API**, not `deepseek-official`. Use a disposable workspace for the first test, review its permissions and ask “Reply with OK only. Do not call tools.”
+
+Match the request time and model in the Fenno console before testing tools separately. A model-picker entry is not proof of valid credentials or a working end-to-end workflow.
+
+## Protocol selection
+
+| `api` | Fenno address | Requirement |
+| --- | --- | --- |
+| `openai-completions` | `https://api.fenno.ai/v1` | Chat Completions support |
+| `openai-responses` | `https://api.fenno.ai/v1` | Responses support |
+| `anthropic-messages` | `https://api.fenno.ai` | Anthropic Messages support |
+
+Do not assume every model supports every protocol. For empty output, 400 errors or unsupported endpoints, check the model/protocol pairing first.
+
+## Advanced configuration and troubleshooting
+
+Current official documentation places Web UI provider settings in `$DSH_HOME/profiles/web/cordis.patch.yml`. Custom profiles have their own directories. The default configuration root is `~/.dsh`, unless `DSH_HOME` is set.
+
+- `apiKeyEnv` is a credential reference, not a literal key. Ensure the launch environment can resolve it.
+- `MISSING_CREDENTIAL`: check the active provider and credential source without printing credential files.
+- Missing model: add it to the custom provider and save.
+- Duplicate route/plugin: check for repeated provider registration in the same profile.
+- Context and output limits: use the model's actual limits, not another model's defaults.
+
+See the [official provider guide](https://github.com/deepseek-ai/deepseek-harness/blob/master/docs/user/guide/providers.md).
