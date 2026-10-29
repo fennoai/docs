@@ -161,19 +161,19 @@ docs/
 │   └── [[...mdxPath]]/
 │       └── page.tsx           # Render content routes
 ├── content/
-│   ├── _meta.json             # Root navigation
+│   ├── _meta.ts               # Root navigation
 │   ├── index.mdx              # Home page (/)
 │   ├── getting-started.mdx    # /getting-started
 │   ├── concepts/
-│   │   ├── _meta.json         # Folder navigation
+│   │   ├── _meta.ts           # Folder navigation
 │   │   ├── index.mdx          # /concepts
 │   │   └── architecture.mdx   # /concepts/architecture
 │   ├── api/
-│   │   ├── _meta.json
+│   │   ├── _meta.ts
 │   │   ├── index.mdx
 │   │   └── endpoints.mdx
 │   └── guides/
-│       ├── _meta.json
+│       ├── _meta.ts
 │       └── quickstart.mdx
 ├── public/
 │   └── images/
@@ -187,10 +187,12 @@ docs/
 
 ## Navigation Configuration
 
-### Basic _meta.json
+Use a `_meta.ts` (or `_meta.js`) module with a default export to configure navigation.
 
-```json
-{
+### Basic _meta.ts
+
+```ts
+export default {
   "index": "Introduction",
   "getting-started": "Getting Started",
   "concepts": "Core Concepts",
@@ -199,10 +201,10 @@ docs/
 }
 ```
 
-### Advanced _meta.json
+### Advanced _meta.ts
 
-```json
-{
+```ts
+export default {
   "index": {
     "title": "Introduction",
     "type": "page",
@@ -452,10 +454,10 @@ import { FileTree } from 'nextra/components'
 
 <FileTree>
   <FileTree.Folder name="content" defaultOpen>
-    <FileTree.File name="_meta.json" />
+    <FileTree.File name="_meta.ts" />
     <FileTree.File name="index.mdx" />
     <FileTree.Folder name="api">
-      <FileTree.File name="_meta.json" />
+      <FileTree.File name="_meta.ts" />
       <FileTree.File name="endpoints.mdx" />
     </FileTree.Folder>
   </FileTree.Folder>
@@ -660,7 +662,7 @@ curl -X POST https://api.project.com/v1/users \
 
 ### Structure
 
-- [ ] `_meta.json` configured
+- [ ] `_meta.ts` configured
 - [ ] Logical flow (overview → details → examples)
 - [ ] Quick start near top
 - [ ] Related links at end
@@ -725,8 +727,8 @@ Static exports are served from `out/`; `next start` is for the default server bu
 | Docusaurus                     | Nextra                               |
 | ------------------------------ | ------------------------------------ |
 | `docs/` folder                 | `content/` folder                    |
-| `sidebars.ts`                  | `_meta.json` files                   |
+| `sidebars.ts`                  | `_meta.ts` files                     |
 | `docusaurus.config.ts`         | `app/layout.tsx` + `next.config.mjs` |
 | `:::note` admonitions          | `<Callout>` component                |
 | `@theme/Tabs`                  | `<Tabs>` from nextra                 |
-| `sidebar_position` frontmatter | Order in `_meta.json`                |
+| `sidebar_position` frontmatter | Order in `_meta.ts`                  |
