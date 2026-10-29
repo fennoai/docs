@@ -193,11 +193,11 @@ Use a `_meta.ts` (or `_meta.js`) module with a default export to configure navig
 
 ```ts
 export default {
-  "index": "Introduction",
-  "getting-started": "Getting Started",
-  "concepts": "Core Concepts",
-  "api": "API Reference",
-  "guides": "Guides"
+  index: 'Introduction',
+  'getting-started': 'Getting Started',
+  concepts: 'Core Concepts',
+  api: 'API Reference',
+  guides: 'Guides'
 }
 ```
 
@@ -205,40 +205,40 @@ export default {
 
 ```ts
 export default {
-  "index": {
-    "title": "Introduction",
-    "type": "page",
-    "theme": {
-      "layout": "full"
+  index: {
+    title: 'Introduction',
+    type: 'page',
+    theme: {
+      layout: 'full'
     }
   },
-  "getting-started": "Getting Started",
-  "---": {
-    "type": "separator",
-    "title": "Features"
+  'getting-started': 'Getting Started',
+  '---': {
+    type: 'separator',
+    title: 'Features'
   },
-  "concepts": {
-    "title": "Core Concepts",
-    "type": "page"
+  concepts: {
+    title: 'Core Concepts',
+    type: 'page'
   },
-  "api": {
-    "title": "API Reference",
-    "type": "menu",
-    "items": {
-      "endpoints": "Endpoints",
-      "authentication": "Authentication"
+  api: {
+    title: 'API Reference',
+    type: 'menu',
+    items: {
+      endpoints: 'Endpoints',
+      authentication: 'Authentication'
     }
   },
-  "changelog": {
-    "title": "Changelog",
-    "type": "page",
-    "display": "hidden"
+  changelog: {
+    title: 'Changelog',
+    type: 'page',
+    display: 'hidden'
   },
-  "github": {
-    "title": "GitHub",
-    "type": "page",
-    "href": "https://github.com/org/project",
-    "newWindow": true
+  github: {
+    title: 'GitHub',
+    type: 'page',
+    href: 'https://github.com/org/project',
+    newWindow: true
   }
 }
 ```
