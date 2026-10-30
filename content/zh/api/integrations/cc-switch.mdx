@@ -1,0 +1,70 @@
+---
+title: "CC Switch 接入 Fenno API"
+description: "使用 CC Switch 管理 Claude Code 与 Codex 的 Fenno API 配置，区分协议地址、认证方式和模型 ID，完成供应商切换、备份与验证。"
+---
+
+import { Callout } from 'nextra/components'
+
+# CC Switch 接入
+
+[CC Switch](https://github.com/farion1231/cc-switch) 用于管理多个 AI 编程客户端的供应商配置。它不是模型服务：模型请求仍由 Claude Code、Codex 等客户端发送到 Fenno API。
+
+## 准备与备份
+
+从[官方 Releases](https://github.com/farion1231/cc-switch/releases)安装，先备份已有客户端配置。选择 **Claude Code** 或 **Codex** 标签后再添加供应商，不要把两种协议的地址混用。
+
+## 配置 Claude Code
+
+1. 打开 Claude Code 标签，点击添加，选择自定义供应商。
+2. 名称填写 `Fenno API`，地址填写 `https://api.fenno.ai`。
+3. 填入 Fenno API Key，认证选择 `ANTHROPIC_AUTH_TOKEN`；若使用 `ANTHROPIC_API_KEY`，不要同时保留冲突凭据。
+4. 模型填写支持 Anthropic Messages 的精确模型 ID。其他默认模型槽位只在需要映射时配置。
+5. 保存后点击启用 / 使用，再启动一个新的 Claude Code 会话。
+
+对应的 Claude Code 配置内容如下，按字段合并，不要覆盖其他设置：
+
+```json
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://api.fenno.ai",
+    "ANTHROPIC_AUTH_TOKEN": "<YOUR_FENNO_API_KEY>",
+    "ANTHROPIC_MODEL": "<YOUR_MODEL_ID>"
+  }
+}
+```
+
+JSON 中的 Key 是实际凭据；`"$FENNO_API_KEY"` 不会自动展开为环境变量。请不要分享包含真实 Key 的配置或截图。
+
+## 配置 Codex
+
+切换到 **Codex** 标签，添加自定义供应商，填写 Fenno Key 与 `https://api.fenno.ai/v1`，选择支持 Responses 的模型。CC Switch 的 Codex 编辑器分为认证和 TOML 配置两部分：
+
+```json filename="auth.json section"
+{ "OPENAI_API_KEY": "<YOUR_FENNO_API_KEY>" }
+```
+
+```toml filename="config.toml section"
+model_provider = "fenno"
+model = "<YOUR_MODEL_ID>"
+
+[model_providers.fenno]
+name = "Fenno API"
+base_url = "https://api.fenno.ai/v1"
+wire_api = "responses"
+requires_openai_auth = true
+```
+
+这里的 `OPENAI_API_KEY` 是 Codex 本地认证文件的字段名，填入的是 Fenno Key。与[直接使用环境变量的方案](/zh/api/integrations/codex)不同，这套配置由 CC Switch 管理；不要同时混入另一套 `env_key` 配置。
+
+## 验证与回退
+
+- 在工具中确认已启用 Fenno 配置，重新启动客户端或新建会话。
+- Claude Code 用 `/status` 核对地址；Codex 核对启动时的提供商与模型。
+- 发送“只回复 OK，不修改文件”，再核对 Fenno 控制台的请求时间和用量。
+- 切换后无效时，检查 shell 环境变量和其他配置工具的覆盖。需要回退时，重新启用旧供应商或恢复备份。
+
+<Callout type="info">
+  CC Switch 的用量查询需要服务商提供匹配的统计接口。本指南不假设 Fenno 提供某个第三方模板需要的接口；先在 Fenno 控制台查看用量，不要把其他平台的查询脚本直接复制过来。
+</Callout>
+
+参考 [CC Switch 官方添加供应商说明](https://github.com/farion1231/cc-switch/blob/main/docs/user-manual/zh/2-providers/2.1-add.md)。

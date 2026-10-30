@@ -1,0 +1,52 @@
+---
+title: "可用模型列表与模型查询"
+description: "使用 Fenno OpenAI 兼容模型端点获取精确模型 ID，理解列表与单模型返回信息，不把模型查询结果误当作全部协议、价格和能力的验证。"
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# 模型查询
+
+| 方法 | 路径 | 用途 |
+| --- | --- | --- |
+| GET | `/v1/models` | 列出当前凭据可见的模型 |
+| GET | `/v1/models/{model}` | 查询一个模型可返回的元信息 |
+
+主机为 `https://api.fenno.ai`，使用 `Authorization: Bearer <FENNO_API_KEY>`。OpenAI SDK 的 Base URL 需以 `/v1` 结尾。
+
+## 获取模型列表
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    timeout=60.0,
+    max_retries=0,
+)
+
+for model in client.models.list():
+    print(model.id)
+```
+
+HTTP 响应采用 OpenAI 列表结构，包含 `object: "list"` 和模型对象数组 `data[]`。应原样使用返回的 `id`，不要附加其他服务商的命名空间，也不要把展示名称当作 ID。
+
+## 查询单个模型
+
+```python
+model = client.models.retrieve(os.environ["FENNO_MODEL"])
+print(model.id)
+```
+
+模型对象可能包含 `object`、`created`、`owned_by` 等元信息，它们不保证所有协议或功能都可用。
+
+## 模型发现不等于能力验证
+
+- 列出 ID 本身不能证明上下文长度、价格、工具调用、图片输入或 Responses 兼容性。
+- 权限与可用性可能变化，应在真实请求时处理模型不可用的情况。
+- 查看账户的模型信息，并用小请求验证目标端点。
+- 生产环境保留明确配置，不要随机选择列表中的第一个模型。
+
+继续阅读[模型选择与能力](/zh/api/models)和[工具接入检查清单](/zh/api/integrations)。

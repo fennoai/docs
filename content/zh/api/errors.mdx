@@ -1,0 +1,96 @@
+---
+title: "API 错误、超时与安全重试"
+description: "排查 Fenno API 的鉴权、模型、额度和上游失败，使用识别 Retry-After 的有界重试，保留流式部分结果并避免重放有副作用的工具操作。"
+---
+
+import { Callout } from 'nextra/components'
+
+# 错误、超时与重试
+
+先判断错误来自鉴权、请求格式、账户限制、所选模型还是网络。反复发送同一条无效请求不能解决问题。错误响应体的具体结构见 [API 错误参考](/zh/reference/errors)。
+
+## 判断是否适合重试
+
+| 状态或现象 | 建议 |
+| --- | --- |
+| `400` | 修正参数、协议、模型能力或输入大小 |
+| `401` | 检查密钥及相互冲突的认证配置 |
+| `403` | 检查权限与策略限制，不要尝试绕过 |
+| `404` | 核对最终请求地址及精确模型 ID |
+| `402` 或额度耗尽 | 先检查余额和限额 |
+| `429` | 阅读错误体和可选重试提示，降低并发 |
+| `408`、连接重置或超时 | 结果可能未知，先判断是否可安全重放 |
+| `5xx` | 可考虑有界重试，避免形成重试风暴 |
+
+## 非流式有界重试示例
+
+下面只对简单文本请求的特定 HTTP 失败状态重试，并关闭 SDK 自动重试，避免尝试次数相乘。安装 `openai`，设置 `FENNO_API_KEY` 和 `FENNO_MODEL` 后运行：
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    timeout=60.0,
+    max_retries=0,
+)
+import random
+import time
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
+from openai import APIStatusError
+
+def retry_delay(value, attempt):
+    if value:
+        try:
+            return max(0.0, float(value))
+        except ValueError:
+            try:
+                date = parsedate_to_datetime(value)
+                return max(0.0, (date - datetime.now(timezone.utc)).total_seconds())
+            except (TypeError, ValueError, OverflowError):
+                pass
+    return min(2 ** attempt, 8) * random.uniform(0.5, 1.0)
+
+deadline = time.monotonic() + 60
+for attempt in range(3):
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise TimeoutError("Application deadline exceeded")
+    try:
+        response = client.with_options(timeout=min(remaining, 20)).chat.completions.create(
+            model=os.environ["FENNO_MODEL"],
+            messages=[{"role": "user", "content": "Reply with OK."}],
+        )
+        print(response.choices[0].message.content)
+        break
+    except APIStatusError as error:
+        if error.status_code not in {429, 500, 502, 503, 504} or attempt == 2:
+            raise
+        wait = retry_delay(error.response.headers.get("retry-after"), attempt)
+        if wait > 30 or wait >= deadline - time.monotonic():
+            raise
+        time.sleep(wait)
+```
+
+时间预算约束的是应用层尝试与等待，传输超时不是严格的墙钟时间保证。连接错误和结果不明确的超时故意直接上抛，不自动重试。失败的生成也可能已经产生用量，应用应自行判断是否接受重放。
+
+## 流式与副作用操作
+
+<Callout type="warning">
+  内容已经展示后，不要悄悄重新生成并拼接答案。工具已经执行副作用操作后，也不要仅因为模型响应中断就重放该操作。使用明确确认和应用级去重。
+</Callout>
+
+`response.incomplete`、未完成的 Messages 内容块，或缺少协议结束信号的流，应视为部分结果而不是完整成功，见[流式响应](/zh/api/guides/streaming)。
+
+## 报障前的排查顺序
+
+1. 使用小的非敏感输入和正确协议端点复现。
+2. 检查精确模型 ID 与最终请求 URL；OpenAI 客户端的 Base URL 通常含 `/v1`，Anthropic 和 Gemini 原生客户端使用主机地址。
+3. 比较客户端、应用、代理与上游的超时设置。
+4. 记录时间、端点、模型、状态、脱敏错误码及服务提供的请求 ID。
+5. 联系支持时不要在公开 Issue 中附上密钥、认证 Header 或客户提示词。
+
+继续阅读[鉴权](/zh/api/authentication)、[限流](/zh/api/guides/rate-limits)和[成本管理](/zh/api/guides/cost-management)。

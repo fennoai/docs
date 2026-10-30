@@ -1,0 +1,75 @@
+---
+title: "Generate and edit images"
+description: "Use Fenno image models for generation and editing, choose compatible parameters and input formats, and handle URL or base64 results without assuming one model's limits apply to another."
+---
+
+import { Callout } from 'nextra/components'
+
+# Generate and edit images
+
+Choose an available image model and its supported endpoint. Some multimodal models return images through a native content-generation protocol rather than the OpenAI Images API; this guide covers the latter.
+
+## Generate an image
+
+Install `openai`, set `FENNO_API_KEY` and `FENNO_IMAGE_MODEL`, then run:
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    timeout=60.0,
+    max_retries=0,
+)
+
+response = client.images.generate(
+    model=os.environ["FENNO_IMAGE_MODEL"],
+    prompt="A small lighthouse on a rocky coast, watercolor illustration, no text.",
+)
+for image in response.data:
+    if image.url:
+        print("Image URL:", image.url)
+    elif image.b64_json:
+        print("Received base64 image data")
+```
+
+Results can contain a URL or base64 data depending on the model and output options. Store required results promptly if a returned URL is temporary. Do not print full base64 payloads or signed image URLs into shared logs.
+
+## Edit a local image
+
+Using the same `client`, provide a local supported image file. This operation requires a model that supports edits:
+
+```python
+with open("input.png", "rb") as image:
+    edited = client.images.edit(
+        model=os.environ["FENNO_IMAGE_MODEL"],
+        image=image,
+        prompt="Keep the subject unchanged and replace the background with a beach.",
+    )
+print("Returned images:", len(edited.data))
+```
+
+The SDK sends multipart form data. When using cURL, let it create the multipart boundary; do not manually add `Content-Type: application/json` to an image upload.
+
+## Model-specific options
+
+| Option | Check before sending |
+| --- | --- |
+| `size` | Accepted dimensions or aspect ratios |
+| `quality` | Supported quality names and cost implications |
+| `n` | Whether multiple outputs are accepted |
+| Input image or mask | Accepted formats, size limits and mask semantics |
+| Output format | URL versus base64 and optional format controls |
+
+Start with only `model` and `prompt`, then add one supported option at a time. A chat request succeeding does not prove image generation or editing is available for that model.
+
+## Quality, rights and privacy
+
+- State the subject, style and constraints clearly; do not expect perfect text rendering or exact layout.
+- Inspect generated output before publication. Image generation is not proof of factual accuracy or permission to use a brand or likeness.
+- Only upload images you are authorized to process, and avoid public links for private source files.
+- A timed-out generation may still have incurred usage; do not create unlimited duplicate requests.
+
+See the [Images API](/en/reference/openai/images) and [cost management](/en/api/guides/cost-management).

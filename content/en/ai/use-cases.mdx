@@ -1,0 +1,140 @@
+---
+title: "FennoAI workflow examples"
+description: "Explore practical FennoAI workflows for fixing bugs, reviewing pull requests, improving tests and understanding repositories through GitHub conversations."
+---
+
+# Use Cases
+
+FennoAI shines when you need to turn intent into code without leaving your Git workflow. Here are the scenarios teams use it for every day.
+
+---
+
+## Scenario 1: Turn a bug report into a fix
+
+**The situation**: A user reports a bug. Your team triages it, assigns it, someone clones the repo, debugs, writes a fix, writes tests, opens a PR. That's a half-day minimum.
+
+**With FennoAI**: Comment on the issue. Get a PR in minutes.
+
+```text
+Issue #142: Homepage crashes on Safari mobile
+
+/code The viewport meta tag is missing,
+causing layout overflow on mobile Safari. Fix it.
+```
+
+**What happens**:
+
+1. FennoAI clones the repo into an isolated container
+2. Locates the relevant files (`src/pages/home/mobile.tsx`, `viewport.ts`)
+3. Applies the fix (+42 −3 lines)
+4. Runs the full test suite — all 47 tests pass
+5. Opens **PR #143** with a clear description and diff
+
+**You**: Review the PR, approve, merge. Done.
+
+---
+
+## Scenario 2: Plan before you code
+
+**The situation**: A feature request lands. Before anyone writes code, you want a design review — what files change, what's the migration path, what are the risks?
+
+**With FennoAI**: Get an implementation plan in the issue thread.
+
+```text
+Issue #200: Add OAuth2 support (Google & GitHub login)
+
+@fennoai Design the implementation for me, considering our existing JWT auth and the User model.
+```
+
+**What you get**:
+
+- Architecture overview (new routes, middleware, DB schema changes)
+- Step-by-step implementation plan with file paths
+- Migration strategy for existing users
+- Risk assessment (breaking changes, security considerations)
+- Estimated affected files and complexity
+
+**Then**: Once the team agrees on the plan, follow up with `/code` to implement it.
+
+---
+
+## Scenario 3: AI-powered code review
+
+**The situation**: A PR sits for two days because reviewers are busy. When someone finally reviews it, they catch a SQL injection vulnerability.
+
+**With FennoAI**: Every PR gets immediate, thorough review.
+
+```text
+PR #456: Add user search endpoint
+
+/review Focus on security and performance.
+```
+
+**Review output**:
+
+```markdown
+## Security ⚠️
+
+- Line 34: User input passed directly to SQL query — SQL injection risk
+- Line 67: API key logged in debug output — secrets exposure
+
+## Performance
+
+- Line 45: N+1 query pattern — use JOIN or batch loading
+- Line 89: Missing index on `users.email` for search queries
+
+## Code Quality ✅
+
+- Clean separation of concerns
+- Good error handling patterns
+- Suggest extracting the search logic into a service layer
+```
+
+---
+
+## Scenario 4: Refactor with confidence
+
+**The situation**: A service class has grown to 800 lines. Everyone agrees it needs splitting, but nobody wants to do the tedious work.
+
+```text
+PR #101: UserService is too large
+
+/simplify Split UserService into AuthService, ProfileService,
+and NotificationService. Keep all existing tests passing.
+```
+
+**FennoAI**:
+
+1. Analyzes the class dependencies
+2. Extracts three focused services
+3. Updates all import paths across the codebase
+4. Runs the existing test suite to verify nothing breaks
+5. Commits the changes with clear, scoped commit messages
+
+---
+
+## Scenario 5: Onboard new contributors
+
+**The situation**: A new developer joins. They want to contribute but don't know the codebase well enough to implement features confidently.
+
+**With FennoAI**: They describe what they want to do, and FennoAI handles the implementation with full codebase context.
+
+```text
+Issue #300: Add rate limiting to the API
+
+@fennoai I want to add rate limiting to all public API endpoints.
+What's the best approach for our stack?
+```
+
+The new developer gets a detailed plan they can learn from — and if they choose, they can ask FennoAI to implement it too.
+
+---
+
+## When to use which command
+
+| Scenario              | Command                       | Why                           |
+| --------------------- | ----------------------------- | ----------------------------- |
+| Bug fix needed        | `/code`                       | Go straight to implementation |
+| Feature design needed | `/plan`                       | Get alignment before coding   |
+| PR needs review       | `/review`                     | Immediate, thorough feedback  |
+| General question      | `@fennoai` + natural language | Flexible AI assistance        |

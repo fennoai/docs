@@ -1,0 +1,45 @@
+---
+title: "Cursor with Fenno API"
+description: "Configure a Fenno API key and OpenAI base URL override in Cursor. Understand client feature restrictions and verify which provider handles your requests."
+---
+
+import { Callout } from 'nextra/components'
+
+# Cursor
+
+Cursor supports custom OpenAI-compatible endpoints, so requests can be routed through Fenno.
+
+## Steps
+
+1. Open **Settings → Models**.
+2. Click **Add model** and enter an exact model ID from the console.
+3. Expand **OpenAI API Key** and paste your Fenno key.
+4. Set **Override OpenAI Base URL** to:
+
+```text
+https://api.fenno.ai/v1
+```
+
+5. Save the key, enable **Use API Key** and the Base URL override, then run **Verify** if your version provides it.
+6. Start a new conversation, select the configured model explicitly and check its usage in the Fenno console.
+
+<Callout type="warning">
+  Some Cursor features (for example inline completion) rely on specific upstream models. If a
+  feature fails, switch that feature back to a default model; custom-key behavior depends on the client version, selected model and account policy. Not every feature is guaranteed to route through Fenno.
+</Callout>
+
+## Troubleshooting
+
+| Symptom | Fix |
+| --- | --- |
+| Verify fails | Base URL must include `/v1` and reach `api.fenno.ai` |
+| Model not found | Use the model id, not the display name |
+| 429 | Lower concurrency or ask support for a higher quota |
+
+## Team policy and alternatives
+
+Enterprise administrators can restrict personal API keys. If custom configuration is unavailable, check team policy before treating it as a Fenno authentication error. A custom key does not bypass the client's own data processing; review its privacy documentation.
+
+For independent provider configuration, run [Claude Code](/en/api/integrations/claude-code) or [Codex](/en/api/integrations/codex) in Cursor's terminal without changing editors.
+
+See the official [Cursor settings updates](https://cursor.com/docs/release-notes/agents-window) and [team model management](https://cursor.com/docs/enterprise/model-and-integration-management).

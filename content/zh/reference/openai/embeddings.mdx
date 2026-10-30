@@ -1,0 +1,56 @@
+---
+title: "Embeddings 向量端点参考"
+description: "查询 Fenno POST /v1/embeddings 的文本批量输入、可选维度和编码、带索引向量结果、用量及模型输入限制，正确匹配文档与查询向量。"
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# Embeddings API
+
+```http
+POST https://api.fenno.ai/v1/embeddings
+Authorization: Bearer <FENNO_API_KEY>
+Content-Type: application/json
+```
+
+## 请求字段
+
+| 字段 | 类型 | 含义 |
+| --- | --- | --- |
+| `model` | string，必填 | 可用向量模型，不是聊天模型 |
+| `input` | string 或 array，必填 | 文本或模型支持的批量输入 |
+| `dimensions` | integer，可选 | 仅适用于支持维度调整的模型 |
+| `encoding_format` | string，可选 | 受支持的格式，例如 `float`，不保证所有模型支持其他格式 |
+
+单条长度、总 token 与批量上限依模型而定。应用应主动切分超长内容，不要静默截断检索所需文本。
+
+## Python 示例
+
+安装 `openai`，设置 `FENNO_API_KEY` 和 `FENNO_EMBEDDING_MODEL`：
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    timeout=60.0,
+    max_retries=0,
+)
+
+response = client.embeddings.create(
+    model=os.environ["FENNO_EMBEDDING_MODEL"],
+    input=["Database backup guide", "Database restore guide"],
+)
+for item in response.data:
+    print(item.index, len(item.embedding))
+```
+
+## 返回结果
+
+`data[]` 中每项包含 `index`、`object` 与 `embedding`；`model` 标识模型，服务提供时的 `usage` 记录 token 用量。通过 `index` 将向量对应回输入记录。
+
+float 编码下，`embedding` 是数值数组。选择其他编码时，应先按其格式解码，不能直接当作向量数组写入索引。
+
+不同模型或维度的向量不能混用。把向量配置与索引一起存储，并在查询时保持一致。完整流程见[语义检索指南](/zh/api/guides/embeddings)。

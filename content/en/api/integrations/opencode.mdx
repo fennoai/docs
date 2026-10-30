@@ -1,0 +1,87 @@
+---
+title: "OpenCode with Fenno API"
+description: "Configure a custom Fenno provider in OpenCode. Choose the Chat Completions or Responses adapter, reference environment credentials and select a model."
+---
+
+import { Callout } from 'nextra/components'
+
+# OpenCode
+
+OpenCode supports custom providers. This guide adds an OpenAI-compatible provider named `fenno`; it does not assume Fenno is built into the client catalog.
+
+## 1. Prepare the environment
+
+Follow the [official installation instructions](https://opencode.ai/docs/), then check the version and set the key in the launch terminal:
+
+```bash
+opencode --version
+export FENNO_API_KEY="<YOUR_FENNO_API_KEY>"
+```
+
+On Windows PowerShell, use `$env:FENNO_API_KEY = "<YOUR_FENNO_API_KEY>"`. Desktop apps may not inherit shell variables; use custom provider settings or launch from an environment containing the variable.
+
+## 2. Add the provider
+
+Merge this into the project's `opencode.json`, or global `~/.config/opencode/opencode.json`:
+
+```json filename="opencode.json"
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "fenno/<YOUR_MODEL_ID>",
+  "provider": {
+    "fenno": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Fenno",
+      "options": {
+        "baseURL": "https://api.fenno.ai/v1",
+        "apiKey": "{env:FENNO_API_KEY}"
+      },
+      "models": {
+        "<YOUR_MODEL_ID>": { "name": "Fenno coding model" }
+      }
+    }
+  }
+}
+```
+
+Replace both occurrences of `<YOUR_MODEL_ID>` with the same exact model ID.
+
+- `fenno` under `provider.fenno` is a local OpenCode provider ID.
+- A key in `models` is the model ID sent to Fenno.
+- The top-level `model` uses `provider-id/model-id`, adding a local `fenno/` prefix to the gateway model ID.
+- `{env:FENNO_API_KEY}` reads the key at startup, avoiding credentials in the repository.
+
+## 3. Select and verify
+
+Start `opencode` and use `/models` to select a Fenno model, or run this in a test project:
+
+```bash
+opencode run -m "fenno/<YOUR_MODEL_ID>" "Reply with OK only. Do not modify files."
+```
+
+Verify the request in the Fenno console, then test tool calling separately.
+
+## Chat Completions versus Responses
+
+| Protocol | `npm` setting | Final endpoint |
+| --- | --- | --- |
+| Chat Completions | `@ai-sdk/openai-compatible` | `/v1/chat/completions` |
+| Responses | `@ai-sdk/openai` | `/v1/responses` |
+
+<Callout type="warning">
+  Check model protocol support before changing adapters. A model with Codex in its name is not necessarily callable through Chat Completions.
+</Callout>
+
+If setting context or output limits, use the actual model limits rather than values copied from another provider.
+
+## Troubleshooting
+
+| Symptom | Action |
+| --- | --- |
+| Model absent from `/models` | Check file location, JSON syntax and `models` keys |
+| Provider / model not found | Check the local provider ID and `fenno/model-id` format |
+| 401 | Check the launch environment; missing variables resolve to empty strings |
+| 404 / unsupported endpoint | Check the adapter, protocol, base URL and model capabilities |
+| Settings appear ignored | Check whether project configuration overrides global configuration, then restart |
+
+See the official [provider](https://opencode.ai/docs/providers/) and [configuration](https://opencode.ai/docs/config/) documentation.

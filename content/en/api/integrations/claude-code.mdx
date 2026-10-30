@@ -1,0 +1,78 @@
+---
+title: "Claude Code with Fenno API"
+description: "Route Claude Code through Fenno API with Anthropic Messages. Set environment variables, verify the active provider and resolve model or credential conflicts."
+---
+
+import { Callout } from 'nextra/components'
+
+# Claude Code
+
+Claude Code connects to Fenno using Anthropic Messages. This guide uses environment variables, without a third-party provider switcher or changes to local configuration files.
+
+## 1. Prepare the client and model
+
+Install the client using the [official instructions](https://code.claude.com/docs/en/setup), then check its version:
+
+```bash
+claude --version
+```
+
+Prepare a Fenno key and a model supporting Anthropic Messages, streaming and tool calling. Back up existing configuration and avoid multiple tools editing the same provider settings.
+
+## 2. Configure the current terminal
+
+Use the Bash/Zsh example on macOS, Linux or WSL, or PowerShell on Windows:
+
+```bash
+export FENNO_API_KEY="<YOUR_FENNO_API_KEY>"
+export ANTHROPIC_BASE_URL="https://api.fenno.ai"
+export ANTHROPIC_AUTH_TOKEN="$FENNO_API_KEY"
+export ANTHROPIC_MODEL="<YOUR_MODEL_ID>"
+```
+
+```powershell
+$env:FENNO_API_KEY = "<YOUR_FENNO_API_KEY>"
+$env:ANTHROPIC_BASE_URL = "https://api.fenno.ai"
+$env:ANTHROPIC_AUTH_TOKEN = $env:FENNO_API_KEY
+$env:ANTHROPIC_MODEL = "<YOUR_MODEL_ID>"
+```
+
+Replace the key and model ID. The base URL is the domain without `/v1` or `/messages`; the client appends `/v1/messages`.
+
+<Callout type="info">
+  `ANTHROPIC_AUTH_TOKEN` sends Bearer authentication; `ANTHROPIC_API_KEY` sends `x-api-key`. Choose one as described in [authentication](/en/api/authentication), without conflicting credentials.
+</Callout>
+
+## 3. Inspect and verify
+
+```bash
+cd your-test-project
+claude
+```
+
+1. Run `/status` in the session to check the API address and model.
+2. Ask “Reply with OK only. Do not read or modify files.”
+3. Match the time, model and usage in the Fenno console.
+4. Test file reads and tool calling separately in a disposable project.
+
+Do not ask the model which API it uses to verify routing: a generated answer cannot reliably identify the actual endpoint.
+
+## Persistence and conflicting settings
+
+Variables in one terminal are not automatically available in other windows. For persistent use, add non-sensitive settings to your shell configuration and supply the key through your chosen secure credential mechanism.
+
+The `env` object in Claude Code's `settings.json` can override shell variables. If the old address remains active, check user, project and local settings for the same keys, then start a new session. Do not publish complete environment dumps.
+
+If lightweight background requests use an unavailable model, configure `ANTHROPIC_DEFAULT_HAIKU_MODEL` with an accessible exact ID following the official model configuration guide. A successful main request does not verify all background model mappings.
+
+## Troubleshooting
+
+| Symptom | Action |
+| --- | --- |
+| Repeated authentication prompts or 401 | Check the active credential source, stale keys and settings overrides |
+| 404 / model not found | Remove repeated `/v1` segments and check Messages support |
+| Main session works, background requests fail | Check default model mappings and account permissions |
+| Text works, tool requests fail | Reduce to one tool and inspect arguments and tool-result messages |
+| 429 / insufficient quota | Read the error and check quota before retrying a long conversation |
+
+See [Claude Code's gateway guide](https://code.claude.com/docs/en/llm-gateway-connect), [model configuration](https://code.claude.com/docs/en/model-config), and [general troubleshooting](/en/api/integrations/others).

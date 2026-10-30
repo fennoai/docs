@@ -1,0 +1,70 @@
+---
+title: "CC Switch with Fenno API"
+description: "Manage Fenno API providers in CC Switch for Claude Code and Codex. Configure protocol-specific URLs, credentials, model IDs, backups and verification."
+---
+
+import { Callout } from 'nextra/components'
+
+# CC Switch
+
+[CC Switch](https://github.com/farion1231/cc-switch) manages provider settings for AI coding clients. It is not a model service: Claude Code, Codex and other clients still send requests to Fenno API.
+
+## Preparation and backups
+
+Install from the [official releases](https://github.com/farion1231/cc-switch/releases) and back up existing client settings. Select the **Claude Code** or **Codex** tab before adding a provider; their protocol addresses differ.
+
+## Claude Code
+
+1. Select the Claude Code tab, add a provider and choose custom configuration.
+2. Name it `Fenno API` and set the address to `https://api.fenno.ai`.
+3. Enter your Fenno key using `ANTHROPIC_AUTH_TOKEN`, or use `ANTHROPIC_API_KEY` without conflicting credentials.
+4. Enter an exact model ID supporting Anthropic Messages. Configure other default-model slots only when mappings are needed.
+5. Save, activate the provider and start a new Claude Code session.
+
+Merge these fields into the Claude Code configuration without replacing other settings:
+
+```json
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "https://api.fenno.ai",
+    "ANTHROPIC_AUTH_TOKEN": "<YOUR_FENNO_API_KEY>",
+    "ANTHROPIC_MODEL": "<YOUR_MODEL_ID>"
+  }
+}
+```
+
+The JSON credential is an actual key. `"$FENNO_API_KEY"` is not automatically expanded. Never share a configuration or screenshot containing a real key.
+
+## Codex
+
+Select the **Codex** tab and add a custom provider with your Fenno key, `https://api.fenno.ai/v1`, and a Responses-capable model. CC Switch separates authentication from TOML configuration:
+
+```json filename="auth.json section"
+{ "OPENAI_API_KEY": "<YOUR_FENNO_API_KEY>" }
+```
+
+```toml filename="config.toml section"
+model_provider = "fenno"
+model = "<YOUR_MODEL_ID>"
+
+[model_providers.fenno]
+name = "Fenno API"
+base_url = "https://api.fenno.ai/v1"
+wire_api = "responses"
+requires_openai_auth = true
+```
+
+`OPENAI_API_KEY` is the field name in Codex's local authentication file; its value is your Fenno key. Unlike the [direct environment-variable setup](/en/api/integrations/codex), these settings are managed by CC Switch. Do not mix in a competing `env_key` configuration.
+
+## Verification and rollback
+
+- Confirm the Fenno configuration is active, then restart the client or start a new session.
+- Check `/status` in Claude Code, or the startup provider and model in Codex.
+- Ask “Reply with OK only. Do not modify files”, then match the request time and usage in the Fenno console.
+- If changes appear ignored, check shell variables and other configuration tools. Reactivate the previous provider or restore your backup to roll back.
+
+<Callout type="info">
+  Usage queries require a matching provider statistics API. This guide does not assume Fenno implements endpoints expected by third-party templates. Use the Fenno console rather than copying another platform's usage script.
+</Callout>
+
+See the [official CC Switch provider guide](https://github.com/farion1231/cc-switch/blob/main/docs/user-manual/en/2-providers/2.1-add.md).

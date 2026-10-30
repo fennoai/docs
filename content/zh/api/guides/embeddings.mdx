@@ -1,0 +1,64 @@
+---
+title: "向量化与语义检索"
+description: "通过 Fenno API 生成 Embeddings、比较向量并构建检索流程，保持文档与查询的模型版本、维度和索引一致，避免默认模型或隐私配置错误。"
+---
+
+import { Callout } from 'nextra/components'
+
+# 向量化与语义检索
+
+Embedding 将内容转成用于相似度搜索、聚类或检索增强生成（RAG）的数值向量。必须使用向量模型，不能直接填写聊天模型 ID。
+
+## 生成并比较向量
+
+安装 `openai`，设置 `FENNO_API_KEY` 和可用的 `FENNO_EMBEDDING_MODEL`。下面不依赖外部向量数据库，直接比较两段文本：
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    timeout=60.0,
+    max_retries=0,
+)
+import math
+
+result = client.embeddings.create(
+    model=os.environ["FENNO_EMBEDDING_MODEL"],
+    input=["A guide to database backups", "How to restore a database"],
+)
+vectors = [item.embedding for item in sorted(result.data, key=lambda item: item.index)]
+
+def cosine(a, b):
+    if len(a) != len(b):
+        raise ValueError("Embedding dimensions differ")
+    denominator = math.sqrt(sum(x * x for x in a) * sum(y * y for y in b))
+    return sum(x * y for x, y in zip(a, b)) / denominator if denominator else 0.0
+
+print("dimensions:", len(vectors[0]))
+print("similarity:", cosine(vectors[0], vectors[1]))
+```
+
+相似度只是示例度量，不是适用于所有业务的相关性阈值。请根据自己的问题和标注数据调整检索标准。
+
+## 构建 RAG 流程
+
+1. 将文档切成有意义的片段，保留来源 ID 和访问权限信息。
+2. 生成片段向量，连同原文与模型版本一起存储。
+3. 用同一个模型及兼容维度对用户问题生成向量。
+4. 检索相关片段、应用权限过滤，再将原文放进聊天提示词。
+5. 要求语言模型引用来源；没有相关资料时应明确处理，而不是强行回答。
+
+检索与回答生成是分别计费的请求。持有 Fenno API Key，并不意味着已经获得托管知识库或向量数据库。
+
+## 保持索引一致
+
+- 不同模型或不同维度的向量不能混用；换模型时通常要重新建立向量索引。
+- 模型支持 `dimensions` 时，文档与查询要使用同一个值，不要假设所有模型都接受该参数。
+- 按模型限制控制批大小与单条长度，切分由应用负责。
+- 通过响应的 `index` 将向量匹配回原始文档，不要忽略顺序。
+- 不要向量化密钥，也不要让检索结果泄露用户无权访问的文档。
+
+继续阅读 [Embeddings API](/zh/reference/openai/embeddings)、[LangChain](/zh/api/integrations/langchain)和 [LlamaIndex](/zh/api/integrations/llamaindex)。

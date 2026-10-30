@@ -1,0 +1,35 @@
+---
+title: "Gemini 协议 API 总览"
+description: "查询 Fenno Gemini 兼容内容生成、流式和模型资源端点，正确配置 Google GenAI SDK 主机与鉴权 Header，避免混用其他协议的消息与参数格式。"
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# Gemini API
+
+原生 Gemini 请求使用 `https://api.fenno.ai` 主机。Google GenAI SDK 会追加版本和模型资源路径。
+
+| 方法 | 完整路径 | 参考 |
+| --- | --- | --- |
+| POST | `/v1beta/models/{model}:generateContent` | [内容生成](/zh/reference/gemini/generate-content) |
+| POST | `/v1beta/models/{model}:streamGenerateContent?alt=sse` | [流式内容生成](/zh/reference/gemini/generate-content) |
+| GET | `/v1beta/models` | [模型资源](/zh/reference/gemini/models) |
+| GET | `/v1beta/models/{model}` | [模型资源](/zh/reference/gemini/models) |
+
+## 鉴权
+
+```http
+x-goog-api-key: <FENNO_API_KEY>
+Content-Type: application/json
+```
+
+建议使用 Header 而不是 `key` 查询参数，以减少凭据出现在日志中的风险。SDK 可能自行管理认证传输，配置和调试时不要输出带密钥的请求 URL。
+
+## 协议边界
+
+- 输入使用 `contents[].parts`，不是 OpenAI 的 `messages`，也不是 Anthropic 内容块。
+- REST 生成设置位于 `generationConfig`，SDK 便捷接口可能通过 `config` 提供。
+- 输出位于 `candidates[].content.parts`，同时要检查结束原因与安全反馈。
+- 支持内容生成，不代表支持 Files、cachedContents 管理、微调或所有原生托管工具。
+
+继续阅读 [Gemini CLI 接入](/zh/api/integrations/gemini-cli)、[视觉输入](/zh/api/guides/vision)和[官方 Gemini API 参考](https://ai.google.dev/api/generate-content)。

@@ -1,0 +1,73 @@
+---
+title: "LlamaIndex 接入 Fenno API"
+description: "为 LlamaIndex 的 OpenAILike 与 OpenAILikeEmbedding 配置 Fenno 地址，明确上下文和能力元信息，通过最小 RAG 示例避免调用默认提供方。"
+---
+
+import { Callout } from 'nextra/components'
+
+# LlamaIndex
+
+LlamaIndex 可以分别通过兼容适配器调用语言模型与向量模型，两者都必须配置。只修改语言模型，向量化仍可能访问默认提供方。
+
+## 1. 安装适配器
+
+```bash
+python -m pip install -U llama-index-core llama-index-llms-openai-like llama-index-embeddings-openai-like
+```
+
+设置 `FENNO_API_KEY`、`FENNO_MODEL`，并将 `FENNO_CONTEXT_WINDOW` 设为所选聊天模型已确认的整数上下文长度。检索场景还需单独设置 `FENNO_EMBEDDING_MODEL`。部署时锁定已验证的包版本。
+
+## 2. 先验证语言模型
+
+```python
+import os
+from llama_index.llms.openai_like import OpenAILike
+
+llm = OpenAILike(
+    model=os.environ["FENNO_MODEL"],
+    api_base="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    context_window=int(os.environ["FENNO_CONTEXT_WINDOW"]),
+    is_chat_model=True,
+    is_function_calling_model=False,
+    max_retries=0,
+    timeout=60,
+)
+print(llm.complete("Reply with OK only."))
+```
+
+LlamaIndex 的配置名是 `api_base`，不是 OpenAI Python 客户端的 `base_url`。`is_chat_model=True` 选择聊天模式。简单文本不需要工具，因此示例关闭函数调用；验证模型支持后才能启用。
+
+## 3. 建索引前明确向量模型
+
+在同一个 Python 进程中继续运行，并选择可用向量模型：
+
+```python
+from llama_index.core import Document, Settings, VectorStoreIndex
+from llama_index.embeddings.openai_like import OpenAILikeEmbedding
+
+Settings.llm = llm
+Settings.embed_model = OpenAILikeEmbedding(
+    model_name=os.environ["FENNO_EMBEDDING_MODEL"],
+    api_base="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    max_retries=0,
+)
+documents = [Document(text="Our support team works Monday to Friday, 09:00 to 18:00.")]
+index = VectorStoreIndex.from_documents(documents)
+answer = index.as_query_engine().query("When is the support team available?")
+print(answer)
+```
+
+这段人工示例文本不是 Fenno 的支持时间承诺。建索引会将文档文本发送到向量端点；查询时会向量化问题，并将检索上下文发送给聊天模型。
+
+## 生产使用边界
+
+- 一个索引中不能混用不同模型或不同维度的向量。
+- 将检索结果放进上下文前，按当前用户的文档权限过滤。
+- `Settings` 是进程级全局配置。多租户或并发场景使用不同提供方时，优先显式传入组件级客户端，不要每个请求都修改全局设置。
+- 框架接入不等于 Fenno 提供托管知识库、向量数据库或事实正确性保证。
+- 自定义模型 ID 可能需要明确元信息，不要传给假设固定官方模型目录的专用适配器。
+- 工具权限、回调／追踪的数据处理和重试仍由应用控制。
+
+继续阅读[官方 OpenAILike 参考](https://developers.llamaindex.ai/python/framework-api-reference/llms/openai_like/)、[OpenAILikeEmbedding 参考](https://developers.llamaindex.ai/python/framework-api-reference/embeddings/openai_like/)与[检索指南](/zh/api/guides/embeddings)。

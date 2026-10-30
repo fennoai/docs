@@ -1,0 +1,26 @@
+name: Documentation feedback / 文档反馈
+description: Report unclear instructions, broken examples or missing documentation.
+title: '[Docs] '
+body:
+  - type: markdown
+    attributes:
+      value: 'Thank you for helping improve Fenno Docs. 请勿填写 API Key、认证头、账户凭据或私人代码。'
+  - type: input
+    id: page
+    attributes:
+      label: Page URL / 页面地址
+      placeholder: https://docs.fenno.ai/zh/api/
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or suggestion / 问题或建议
+      description: Describe what is unclear or incorrect and what you expected.
+    validations:
+      required: true
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context / 补充信息
+      description: Tool version, OS, redacted error text or a minimal example. Do not include secrets.

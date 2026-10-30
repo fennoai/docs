@@ -1,0 +1,62 @@
+---
+title: "通用工具接入与排错"
+description: "将 Fenno API 接入其他兼容工具，正确组合 Host、Base URL、Endpoint 与认证字段，并排查认证、模型、协议及流式调用问题。"
+---
+
+import { Callout } from 'nextra/components'
+
+# 通用接入与排错
+
+未单独列出的工具，只要允许自定义 API 地址、认证信息与模型 ID，就可以按本页核对接入条件。客户端是否支持某项功能，需要单独确认，不能只看它是否宣称“兼容 OpenAI”。
+
+## 分清三个地址字段
+
+- **Host**：只有协议和域名，如 `https://api.fenno.ai`。
+- **Base URL**：客户端拼接接口路径的前缀。OpenAI SDK 使用 `https://api.fenno.ai/v1`。
+- **完整 Endpoint**：已包含具体操作，例如 `https://api.fenno.ai/v1/chat/completions`。
+
+| 协议 | 典型基础地址 | 最终请求路径 | 认证方式 |
+| --- | --- | --- | --- |
+| OpenAI Chat Completions | `https://api.fenno.ai/v1` | `/v1/chat/completions` | `Authorization: Bearer` |
+| OpenAI Responses | `https://api.fenno.ai/v1` | `/v1/responses` | `Authorization: Bearer` |
+| Anthropic Messages | `https://api.fenno.ai` | `/v1/messages` | `x-api-key`；工具专用认证按对应接入指南配置 |
+| Gemini | `https://api.fenno.ai` | `/v1beta/models/{model}:generateContent` | `x-goog-api-key` |
+
+表中的基础地址适用于自动追加相应路径的客户端。如果工具要求完整 Endpoint，填写完整请求地址；不要重复追加版本号。协议细节见[鉴权](/zh/api/authentication)。
+
+## 通用配置步骤
+
+1. 选择自定义提供方以及明确的协议类型。
+2. 填写 API 地址和 Fenno Key，不要把 Key 当作模型 ID。
+3. 从控制台或 `/v1/models` 复制模型 ID，不自行推测厂商前缀。
+4. 保存并启用提供方，在**当前会话**里选中它。
+5. 发起最小文本请求，再核对 Fenno 控制台用量。
+6. 逐项开启流式、图片、工具调用，不要一次启用所有额外功能。
+
+## 先排除账户与地址问题
+
+下面的请求用于检查 OpenAI 兼容端点的认证与模型列表，不验证所有模型能力：
+
+```bash
+export FENNO_API_KEY="<YOUR_FENNO_API_KEY>"
+curl --fail-with-body https://api.fenno.ai/v1/models \
+  -H "Authorization: Bearer $FENNO_API_KEY"
+```
+
+| 现象 | 优先检查 |
+| --- | --- |
+| 401 / 403 | Key 是否有效、当前账户权限、是否仍在读旧凭据 |
+| 404 | 最终路径是否重复拼接、模型 ID 是否精确、协议是否匹配 |
+| 400 | 先移除额外参数，用最小请求核对参数和模型能力 |
+| 429 / 额度不足 | 看错误正文和账户额度；按[错误与重试](/zh/api/errors)处理 |
+| 连接超时 | 网络、代理、证书和客户端超时；不要反复创建同一长任务 |
+| 回复正常但没有 Fenno 用量 | 当前会话可能仍用默认提供方；核对账户、时间和路由 |
+| 文本成功但工具调用失败 | 单独测试工具参数、模型能力和工具结果回传 |
+
+## 安全与报障
+
+<Callout type="warning">
+  不要把 API Key 写入公开仓库、截图或前端代码。不要把完整环境变量、认证头或未脱敏日志发到公开 issue。
+</Callout>
+
+报障时提供工具名称与版本、操作系统、协议、模型 ID、请求时间与时区、HTTP 状态码，以及返回中可用的请求 ID。删除 Key、私人提示词和项目内容后，再分享最小复现。

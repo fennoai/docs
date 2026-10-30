@@ -1,0 +1,28 @@
+---
+title: "Model workflows and production practices"
+description: "Choose a Fenno model tutorial for streaming, tools, structured data, vision, embeddings or image generation, then add caching, cost controls and production reliability."
+---
+
+# Model workflows
+
+Start with a successful [first request](/en/api/quickstart), then choose the workflow your application needs. A model ID being available does not imply support for every workflow below; confirm the model and protocol together.
+
+## Build a feature
+
+| Goal | Guide | What you will implement |
+| --- | --- | --- |
+| Display an answer as it arrives | [Streaming](/en/api/guides/streaming) | Incremental output, completion states and cancellation |
+| Let the application perform an operation | [Function calling](/en/api/guides/tool-calling) | Tool definitions, validation, execution and results |
+| Extract machine-readable records | [Structured output](/en/api/guides/structured-output) | JSON mode, schemas and result validation |
+| Understand images or documents | [Vision](/en/api/guides/vision) | Correct content blocks and input checks |
+| Search your own content | [Embeddings](/en/api/guides/embeddings) | Vector generation and a consistent retrieval pipeline |
+| Create or modify images | [Image generation](/en/api/guides/image-generation) | Generation, multipart edits and result handling |
+
+## Operate the feature
+
+- [Prompt caching](/en/api/guides/prompt-caching): organize reusable context and check actual cache usage.
+- [Usage and costs](/en/api/guides/cost-management): account for all model rounds and control spend.
+- [Rate limits and concurrency](/en/api/guides/rate-limits): bound work before sending requests.
+- [Errors, timeouts and retries](/en/api/errors): distinguish invalid requests from replay-safe failures.
+
+For exact field names and response shapes, use the separate [model API reference](/en/reference). To configure an existing application instead of writing an API client, use [integrations](/en/api/integrations).

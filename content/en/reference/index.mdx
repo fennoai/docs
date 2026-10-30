@@ -1,0 +1,47 @@
+---
+title: "Fenno model API reference"
+description: "Look up Fenno's OpenAI-compatible, Anthropic Messages and Gemini endpoints, authentication, request fields, response structures and streaming behavior separately from task-based guides."
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# Model API reference
+
+This section describes model-service requests and responses. For first-time setup and complete tasks, use the [model guide](/en/api). For the GitHub coding agent, use the [Agent guide](/en/ai).
+
+<Cards num={2}>
+  <LinkCard title="OpenAI-compatible" href="/en/reference/openai">
+    Chat Completions, Responses, embeddings, images and model discovery.
+  </LinkCard>
+  <LinkCard title="Anthropic Messages" href="/en/reference/anthropic">
+    Messages, content blocks, tool results and input-token counting.
+  </LinkCard>
+  <LinkCard title="Gemini" href="/en/reference/gemini">
+    Generate Content, streaming and model resource discovery.
+  </LinkCard>
+  <LinkCard title="Authentication and errors" href="/en/reference/authentication">
+    Protocol-specific headers, credential handling and error diagnosis.
+  </LinkCard>
+</Cards>
+
+## Base URLs
+
+| Client | Base URL | Example final path |
+| --- | --- | --- |
+| OpenAI SDK | `https://api.fenno.ai/v1` | `/v1/chat/completions` |
+| Anthropic SDK | `https://api.fenno.ai` | `/v1/messages` |
+| Google GenAI SDK | `https://api.fenno.ai` | `/v1beta/models/{model}:generateContent` |
+
+An endpoint accepting a protocol does not guarantee every model supports every upstream feature. Use exact IDs available to your account, then verify the requested modality, tool support and optional fields. Examples use environment variables rather than a permanently maintained model list.
+
+This reference does not imply support for upstream-hosted storage, batch jobs, built-in tools, file-management APIs or Agent APIs that are not documented here. Responses are simplified examples where stated; model-specific fields may vary.
+
+## Common conventions
+
+- Send credentials using the [authentication headers](/en/reference/authentication).
+- JSON requests use `Content-Type: application/json`; image edits use multipart form data.
+- Handle errors using status and structured fields, not literal matching of human-readable messages.
+- Treat returned request IDs, usage and rate-limit headers as optional unless the endpoint explicitly requires them.
+- API examples require your own credentials and incur normal usage; documentation builds do not execute them.
+
+See the [error formats](/en/reference/errors), [streaming guide](/en/api/guides/streaming) and [model capabilities](/en/api/models).

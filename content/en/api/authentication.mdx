@@ -1,0 +1,86 @@
+---
+title: "API keys and authentication"
+description: "Authenticate Fenno API requests using Bearer, Anthropic or Gemini headers. Configure SDK credentials, protect API keys and understand account permissions."
+---
+
+import { Callout, Tabs } from 'nextra/components'
+
+# Authentication
+
+Every request needs an API key. A single Fenno key works with all three protocols — use the header
+that matches the endpoint you call.
+
+## Auth headers
+
+<Tabs items={['OpenAI compatible', 'Anthropic native', 'Gemini native']}>
+  <Tabs.Tab>
+    `Authorization: Bearer`:
+
+    ```http
+    Authorization: Bearer $FENNO_API_KEY
+    ```
+  </Tabs.Tab>
+  <Tabs.Tab>
+    `x-api-key`:
+
+    ```http
+    x-api-key: $FENNO_API_KEY
+    anthropic-version: 2023-06-01
+    ```
+
+    <Callout type="info">
+      These SDK examples use `api_key`, which sends `x-api-key`. For a tool using `auth_token`,
+      follow that tool's integration guide and avoid conflicting credential settings.
+    </Callout>
+  </Tabs.Tab>
+  <Tabs.Tab>
+    `x-goog-api-key` or the `key` query parameter:
+
+    ```http
+    x-goog-api-key: $FENNO_API_KEY
+    ```
+  </Tabs.Tab>
+</Tabs>
+
+## SDK setup
+
+```python
+import os
+from anthropic import Anthropic
+
+client = Anthropic(
+    base_url="https://api.fenno.ai",
+    api_key=os.environ["FENNO_API_KEY"],
+)
+```
+
+```ts
+import { GoogleGenAI } from '@google/genai'
+
+const ai = new GoogleGenAI({
+  apiKey: process.env.FENNO_API_KEY,
+  httpOptions: { baseUrl: 'https://api.fenno.ai' }
+})
+```
+
+## Keys and permissions
+
+- Use separate keys for environments or applications where your account allows it.
+- Access and limits follow the current account and key configuration. After a change, verify the actual request instead of assuming an immediate propagation time.
+- If a key leaks, revoke or rotate it through the available console controls and update dependent applications. Do not reuse the exposed value.
+
+## Usage constraints
+
+<Callout type="warning">
+  Do not embed Fenno keys in browsers or mobile apps. Authenticate users through your own
+  backend and forward authorized requests server-side. An application's own session credentials
+  are not Fenno API keys.
+</Callout>
+
+## Usage and quota
+
+Use the usage, balance and limit information available in your account. A response's `usage`
+can help application statistics, but its absence or an HTTP failure alone does not establish zero cost.
+See [usage and cost management](/en/api/guides/cost-management).
+
+When quota is exhausted, requests return `402` or `429`; see [Errors & retries](/en/api/errors).

@@ -1,0 +1,65 @@
+---
+title: "工具接入指南"
+description: "将编程 Agent、桌面应用和 SDK 接入 Fenno API，按工具选择协议，查看地址与密钥配置、首次验证及常见问题排查指南。"
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# 工具接入
+
+在已有工具中使用 Fenno，通常需要填写三项：**API 地址、Fenno API Key、模型 ID**。先选择工具，再按对应协议配置；不要把不同工具的地址直接互换。
+
+## 按使用场景选择
+
+<Cards num={2}>
+  <LinkCard title="终端编程" href="/zh/api/integrations/claude-code">
+    Claude Code、Codex 与 OpenCode：配置供应商，在项目目录里开始编码。
+  </LinkCard>
+  <LinkCard title="编辑器助手" href="/zh/api/integrations/cline">
+    Cline 与 Cursor：填写兼容接口，确认哪些编辑器功能会使用自己的 Key。
+  </LinkCard>
+  <LinkCard title="桌面聊天" href="/zh/api/integrations/cherry-studio">
+    Cherry Studio 与 Chatbox：添加服务商、启用模型，开始多模型对话。
+  </LinkCard>
+  <LinkCard title="在应用中调用" href="/zh/api/integrations/openai-sdk">
+    使用 OpenAI Python / JavaScript SDK，完成普通请求与流式输出。
+  </LinkCard>
+</Cards>
+
+## 接入前准备
+
+1. 在 [Fenno 控制台](https://api.fenno.ai) 创建 API Key，确认账户可用额度。
+2. 从控制台或模型列表复制**精确模型 ID**；不要使用展示名称，也不要自行添加厂商前缀。
+3. 确认模型支持工具所需的协议和能力。Codex 需要 Responses；编程工具还需要流式输出与工具调用。
+4. 备份已有配置。首次验证用新会话和简单提示词，不要直接在重要项目里执行修改。
+
+<Callout type="warning">
+  第三方工具的订阅和 Fenno API 用量分别计费。配置了自己的 API Key，不代表工具的所有付费功能都会开放，也不代表请求免费。
+</Callout>
+
+## 工具与协议
+
+| 工具 | 本指南采用的接入方式 | 文档 |
+| --- | --- | --- |
+| <IntegrationIcon name="cc-switch" /> CC Switch | 管理 Claude Code / Codex 供应商 | [配置指南](/zh/api/integrations/cc-switch) |
+| <IntegrationIcon name="deepseek-harness" /> DeepSeek Harness | 自定义模型提供方 | [配置指南](/zh/api/integrations/deepseek-harness) |
+| <IntegrationIcon name="workbuddy" /> WorkBuddy | 自定义 Chat Completions 模型 | [配置指南](/zh/api/integrations/workbuddy) |
+| <IntegrationIcon name="claude-code" /> Claude Code | Anthropic Messages | [配置指南](/zh/api/integrations/claude-code) |
+| <IntegrationIcon name="codex" /> Codex | OpenAI Responses | [配置指南](/zh/api/integrations/codex) |
+| <IntegrationIcon name="opencode" /> OpenCode | 自定义 OpenAI 兼容提供商 | [配置指南](/zh/api/integrations/opencode) |
+| <IntegrationIcon name="cline" /> Cline | OpenAI Compatible | [配置指南](/zh/api/integrations/cline) |
+| <IntegrationIcon name="cursor" /> Cursor | 自定义 OpenAI 端点，功能受客户端限制 | [兼容性与配置](/zh/api/integrations/cursor) |
+| <IntegrationIcon name="cherry-studio" /> Cherry Studio | 自定义 OpenAI 服务商 | [配置指南](/zh/api/integrations/cherry-studio) |
+| <IntegrationIcon name="chatbox" /> Chatbox | 自定义 OpenAI 兼容提供方 | [配置指南](/zh/api/integrations/chatbox) |
+| <IntegrationIcon name="openai-sdk" /> OpenAI SDK | Python / JavaScript 服务端调用 | [迁移指南](/zh/api/integrations/openai-sdk) |
+| <IntegrationIcon name="gemini-cli" /> Gemini CLI | 原生 Gemini API Key 认证 | [配置指南](/zh/api/integrations/gemini-cli) |
+| <IntegrationIcon name="zed" /> Zed | 自定义 OpenAI 兼容提供方 | [配置指南](/zh/api/integrations/zed) |
+| <IntegrationIcon name="langchain" /> LangChain | ChatOpenAI 自定义地址 | [配置指南](/zh/api/integrations/langchain) |
+| <IntegrationIcon name="llamaindex" /> LlamaIndex | OpenAILike 与独立向量适配器 | [配置指南](/zh/api/integrations/llamaindex) |
+| 其他工具 | 按协议核对 Host、Base URL 与请求路径 | [通用接入](/zh/api/integrations/others) |
+
+## 如何确认真的接通
+
+先发送“只回复 OK”，再在 Fenno 控制台核对请求时间、模型和用量。**模型自述“我使用了 Fenno”不是验证依据**。
+
+文本成功后，再分别测试流式输出、图片输入或工具调用。基础连接正常不代表每种模型能力都可用。遇到问题先看[通用排错清单](/zh/api/integrations/others)与[错误与重试](/zh/api/errors)。

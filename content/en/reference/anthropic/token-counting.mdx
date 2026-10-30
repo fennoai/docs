@@ -1,0 +1,47 @@
+---
+title: "Messages input-token counting"
+description: "Reference Fenno's Messages count_tokens endpoint to estimate input size before generation, distinguish estimates from billing, and handle models or request blocks without counting support."
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# Count input tokens
+
+```http
+POST https://api.fenno.ai/v1/messages/count_tokens
+x-api-key: <FENNO_API_KEY>
+anthropic-version: 2023-06-01
+Content-Type: application/json
+```
+
+This endpoint estimates input tokens without generating an answer. Availability can depend on the model and request blocks; it does not guarantee that every Messages model can count every input type.
+
+## Request and response
+
+Send `model` and the `messages` you intend to use. Include relevant `system` and `tools` definitions where supported so the estimate reflects the actual request. Do not add generation's required `max_tokens` to this counting example.
+
+```python
+import os
+from anthropic import Anthropic
+
+client = Anthropic(
+    base_url="https://api.fenno.ai",
+    api_key=os.environ["FENNO_API_KEY"],
+)
+count = client.messages.count_tokens(
+    model=os.environ["FENNO_MODEL"],
+    messages=[{"role": "user", "content": "What is an API gateway?"}],
+)
+print(count.input_tokens)
+```
+
+The response includes `input_tokens`. It is not an output-token prediction or a currency bill. Final usage can differ because generation, tool rounds and model-side processing change the total workload.
+
+## Use estimates safely
+
+- Check input size before starting an expensive workflow, while reserving room for the intended output.
+- If a model or block type is unsupported, surface that limitation rather than returning a fabricated zero.
+- Local tokenizers are approximate unless explicitly matched to the selected model and request format.
+- Keep pricing calculations separate and reconcile actual usage with available billing records.
+
+See [Messages](/en/reference/anthropic/messages) and [cost management](/en/api/guides/cost-management).

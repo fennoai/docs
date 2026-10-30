@@ -1,0 +1,160 @@
+---
+title: "FennoAI scheduled tasks"
+description: "Schedule recurring FennoAI tasks through the console or repository configuration. Learn scheduling rules, execution behavior and fork-repository limitations."
+---
+
+import { Callout } from 'nextra/components'
+
+# Scheduled Tasks
+
+FennoAI can run AI tasks on a schedule. This is useful for daily summaries, recurring code checks, knowledge base maintenance, and other routine workflows.
+
+You can create scheduled tasks in two ways:
+
+- **console**: create and manage tasks manually in the console
+- **In-repo config**: declare `schedule:` tasks in `.fennoai.yml` on the default branch
+
+## Good Use Cases
+
+- Generate a daily summary of issues or PRs
+- Check TODOs, failing tests, or stale dependencies on a schedule
+- Maintain docs or internal knowledge bases regularly
+- Run recurring analysis without waiting for a manual comment
+
+## Option 1: Create Tasks in the console
+
+On the console Scheduled page, you can create a task directly. The current form exposes these fields:
+
+- `Task Name`: unique task name within the same repository
+- `Repository`: an optional repository and branch
+- `Runtime`: `codex` or `claudecode`
+- `Timezone`: IANA timezone used by the cron schedule
+- `Cron Expression`: 5-field cron expression
+- `Prompt`: instructions for the AI agent
+
+Example:
+
+```text
+Task Name: Daily review summary
+Repository: acme/platform@main
+Runtime: codex
+Timezone: Asia/Shanghai
+Cron Expression: 0 9 * * *
+Prompt: Summarize the last 24 hours of merged PRs and open issues, then draft a short engineering update.
+```
+
+After creation, the console lets you:
+
+- view tasks
+- trigger a run immediately
+- inspect run history
+- inspect CMA DeploymentRuns, Session status, and live Events
+- edit, pause, or archive manually created tasks
+
+## Option 2: Declare Tasks in `.fennoai.yml`
+
+If you want scheduled rules to live with the repository, add a `.fennoai.yml` file on the default branch:
+
+```yaml
+default_runtime: claudecode
+
+schedule:
+  - name: Daily issue triage
+    cron: "0 9 * * *"
+    timezone: Asia/Shanghai
+    prompt: "Review newly opened issues in the last 24 hours, group them by theme, and draft a triage summary."
+
+  - name: Weekly dependency check
+    cron: "0 10 * * 1"
+    runtime: codex
+    repositories:
+      - repository: acme/platform
+        branch: main
+    prompt: "Check dependency updates merged in the last 7 days and summarize any follow-up work needed."
+```
+
+Each `schedule` item supports:
+
+- `name`: required, unique within the repository
+- `cron`: required 5-field cron expression
+- `prompt`: required task prompt
+- `runtime`: optional, falls back to `default_runtime`
+- `timezone`: optional, falls back to the service default timezone
+- `repositories`: optional single-repository list; when omitted, uses the current repository and its `branch` or default branch
+
+Within `schedule:` entries, the legacy `provider`, `agent` and `default_ai_provider` fields remain readable during migration. New `schedule` entries should use `runtime` and cannot select a model. Outside `schedule:`, `default_ai_provider` and the per-provider `model` field are still the current repository configuration — see [Repository Config](/en/ai/configuration).
+
+### Supported Config Paths
+
+`.fennoai.yml` is the recommended filename. FennoAI also supports these legacy paths:
+
+- `.fennoai.yml`
+- `.xgopilot.yml`
+- `.github/fennoai.yml`
+- `.github/xgopilot.yml`
+
+FennoAI reads the first file it finds according to path priority.
+
+## Cron Rules
+
+- Uses a standard **5-field** cron format: `minute hour day month weekday`
+- Minimum interval is **1 hour**
+- Second-level cron expressions are not supported
+
+Common examples:
+
+```text
+0 9 * * *    Every day at 09:00
+0 */6 * * *  Every 6 hours
+0 10 * * 1   Every Monday at 10:00
+0 9 1 * *    The 1st day of each month at 09:00
+```
+
+## Sync and Activation Behavior
+
+Tasks created in the console take effect as soon as you save them.
+
+In-repo `schedule:` tasks work differently:
+
+- FennoAI reloads scheduled-task config only after a **push to the default branch of a non-fork repository**. Forks cannot automatically register or restore `schedule:` tasks; manually created console tasks are unaffected
+- after adding or updating `schedule`, you need to commit that change to the default branch
+- removing a `schedule` entry removes the corresponding in-repo task
+
+If you only change the config on a feature branch, production scheduled tasks will not update yet.
+
+## console vs In-Repo Ownership
+
+Tasks created from `.fennoai.yml` can be viewed and triggered from the console, but they cannot be:
+
+- edited
+- paused or resumed
+- deleted
+
+Their source of truth is always the repository config file.
+
+<Callout type="warning">
+  Repository-defined schedules are managed by configuration on the default branch. Edit that source rather than trying to change the generated task in the console.
+</Callout>
+
+## Limits and Notes
+
+- up to `20` `schedule` tasks per repository
+- at most one repository per scheduled task
+- task names can be at most `200` characters
+- `runtime` must be a configured scheduled runtime
+- keep `.fennoai.yml` limited to model and scheduling config, not API keys or other secrets
+
+## FAQ
+
+### Why did my `.fennoai.yml` change not take effect immediately?
+
+Because `schedule:` tasks are synchronized after a push to the default branch. Make sure the config change has landed on the default branch and that a new push event has happened.
+
+### Why can't I edit some tasks in the console?
+
+Those tasks come from `.fennoai.yml`. The console only provides visibility and manual triggering for them.
+
+### Which approach should I use?
+
+- Use the **console** when you want faster setup and centralized task management
+- Use **`.fennoai.yml`** when you want scheduled rules versioned with the repository

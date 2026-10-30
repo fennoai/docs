@@ -1,0 +1,121 @@
+---
+title: "OpenAI SDK with Fenno API"
+description: "Use the official OpenAI Python and JavaScript SDKs with Fenno API. Run Chat Completions, streaming and Responses examples with server-side credentials."
+---
+
+import { Callout } from 'nextra/components'
+
+# OpenAI SDK
+
+For server-side applications using the official OpenAI SDK, change the client address and supply a Fenno key. Also select an available model ID: a model from your previous provider is not automatically available through Fenno.
+
+## Environment variables
+
+Replace both placeholders. Start with a Chat Completions model for `FENNO_MODEL`; check Responses support separately before using that example.
+
+```bash
+export FENNO_API_KEY="<YOUR_FENNO_API_KEY>"
+export FENNO_MODEL="<YOUR_MODEL_ID>"
+```
+
+## Python
+
+Install the SDK and run the example in the same terminal:
+
+```bash
+python -m pip install --upgrade openai
+```
+
+```python filename="example.py"
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+)
+
+response = client.chat.completions.create(
+    model=os.environ["FENNO_MODEL"],
+    messages=[{"role": "user", "content": "Reply with OK only."}],
+)
+print(response.choices[0].message.content)
+```
+
+```bash
+python example.py
+```
+
+## JavaScript / TypeScript
+
+This Node.js `.mjs` example runs directly. TypeScript applications use the same client configuration.
+
+```bash
+npm install openai
+```
+
+```javascript filename="example.mjs"
+import OpenAI from 'openai'
+
+const client = new OpenAI({
+  baseURL: 'https://api.fenno.ai/v1',
+  apiKey: process.env.FENNO_API_KEY
+})
+
+const response = await client.chat.completions.create({
+  model: process.env.FENNO_MODEL,
+  messages: [{ role: 'user', content: 'Reply with OK only.' }]
+})
+console.log(response.choices[0].message.content)
+```
+
+```bash
+node example.mjs
+```
+
+## Streaming output
+
+Replace the request in the Python example, reusing its `client`:
+
+```python
+stream = client.chat.completions.create(
+    model=os.environ["FENNO_MODEL"],
+    messages=[{"role": "user", "content": "Explain streaming in one sentence."}],
+    stream=True,
+)
+for chunk in stream:
+    if chunk.choices:
+        text = chunk.choices[0].delta.content
+        if text:
+            print(text, end="", flush=True)
+print()
+```
+
+## Responses
+
+For a model that supports Responses, reuse the client to call `/v1/responses`. Change the method, not the base URL; do not set it to the complete `/responses` endpoint:
+
+```python
+response = client.responses.create(
+    model=os.environ["FENNO_MODEL"],
+    input="Reply with OK only.",
+)
+print(response.output_text)
+```
+
+## Migration checklist
+
+| Item | Check |
+| --- | --- |
+| Address field | `base_url` in Python; `baseURL` in JavaScript / TypeScript |
+| Credential field | `api_key` in Python; `apiKey` in JavaScript / TypeScript |
+| Model | Use an exact Fenno ID; do not invent a prefix such as `openai/` |
+| Capabilities | Tools, images and structured output must be supported by the selected model |
+| Retries | Account for SDK retries before adding application-level retries |
+| Verification | Match the model, request time and usage in the Fenno console |
+
+<Callout type="warning">
+  These examples are server-side only. Do not expose an API key to run them in a browser. An SDK method does not imply Fenno supports every OpenAI hosted tool or endpoint; check the API documentation and model capabilities.
+</Callout>
+
+See the [OpenAI-compatible API](/en/reference/openai), [errors and retries](/en/api/errors), and [official OpenAI documentation](https://developers.openai.com/api/docs/quickstart) for SDK installation and basic usage.

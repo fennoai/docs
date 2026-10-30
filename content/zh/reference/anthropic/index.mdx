@@ -1,0 +1,35 @@
+---
+title: "Anthropic Messages API 总览"
+description: "查询 Fenno Anthropic 兼容 Messages 和输入 token 计数端点，正确配置原生 SDK 主机、版本 Header 与内容块，明确模型和功能兼容边界。"
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# Anthropic Messages API
+
+Anthropic SDK 的 Base URL 使用 `https://api.fenno.ai`，SDK 会自行追加 `/v1/messages`，不要填 OpenAI 使用的 `/v1` 基础地址。
+
+| 方法 | 路径 | 参考 |
+| --- | --- | --- |
+| POST | `/v1/messages` | [创建消息](/zh/reference/anthropic/messages) |
+| POST | `/v1/messages/count_tokens` | [输入 token 计数](/zh/reference/anthropic/token-counting) |
+
+## 请求 Header
+
+```http
+x-api-key: <FENNO_API_KEY>
+anthropic-version: 2023-06-01
+Content-Type: application/json
+```
+
+## 与 Chat Completions 的区别
+
+- 系统指令放在顶层 `system`，不是随意放入 `messages` 的 system 消息。
+- 生成消息时必须设置 `max_tokens`。
+- `content` 可以包含文本、图片、文档、工具请求、工具结果或模型特有内容块。
+- 工具 schema 使用 `input_schema`，执行结果通过 user 消息中的 `tool_result` 内容块回传。
+- 流式输出使用具名的 message/content-block 事件，不是 Chat delta 对象。
+
+模型权限、视觉、思考和缓存仍取决于所选模型。Anthropic SDK 包含某个 API，并不代表 Fenno 支持上游托管工具、批处理或文件 API。
+
+通用模型 ID 查询见[模型查询](/zh/reference/openai/models)；出现在列表中不能单独证明支持原生 Messages。继续阅读 [Claude Code 接入](/zh/api/integrations/claude-code)和[官方 Messages 文档](https://platform.claude.com/docs/en/api/messages)。

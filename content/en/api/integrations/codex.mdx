@@ -1,0 +1,78 @@
+---
+title: "Codex with Fenno API"
+description: "Configure a custom Fenno API provider in Codex using Responses. Set config.toml, supply an API key and verify model access before running coding tasks."
+---
+
+import { Callout } from 'nextra/components'
+
+# Codex
+
+Codex uses the OpenAI **Responses API**. Configure the address and key, then select a model supporting Responses, streaming and tool calling.
+
+## 1. Install and check the version
+
+```bash
+npm install -g @openai/codex
+codex --version
+```
+
+See the [official Codex documentation](https://developers.openai.com/codex/cli/) for system requirements and other installation methods.
+
+## 2. Configure the Fenno provider
+
+Back up and edit the **user-level** `~/.codex/config.toml`. Merge these fields without replacing your MCP, permission or other provider settings.
+
+```toml filename="~/.codex/config.toml"
+model = "<YOUR_MODEL_ID>"
+model_provider = "fenno"
+
+[model_providers.fenno]
+name = "Fenno"
+base_url = "https://api.fenno.ai/v1"
+env_key = "FENNO_API_KEY"
+wire_api = "responses"
+requires_openai_auth = false
+```
+
+Replace `<YOUR_MODEL_ID>` with an exact model ID that supports Responses. `fenno` is a local provider identifier; do not prepend it to the `model` value.
+
+<Callout type="info">
+  Put provider and authentication settings in user configuration, not a project's `.codex/config.toml`. Current Codex ignores project-level provider settings to prevent projects from redirecting credentials.
+</Callout>
+
+## 3. Set the key
+
+Use Bash/Zsh on macOS, Linux or WSL, or the PowerShell example on Windows. The variable must be available in the **same terminal that starts Codex**:
+
+```bash
+export FENNO_API_KEY="<YOUR_FENNO_API_KEY>"
+```
+
+```powershell
+$env:FENNO_API_KEY = "<YOUR_FENNO_API_KEY>"
+```
+
+This configuration uses `env_key`. There is no need to place the Fenno key in `auth.json`, and it is not an OpenAI sign-in credential.
+
+## 4. Verify a request
+
+Start in an existing test Git repository with a request that does not modify files:
+
+```bash
+cd your-test-project
+codex exec "Reply with OK only. Do not read or modify files."
+```
+
+Check the startup provider and model, then match the request time in the Fenno console. Test tool calling separately using a disposable file; a text response is not proof of full coding compatibility.
+
+## Troubleshooting
+
+| Symptom | Action |
+| --- | --- |
+| Missing environment variable | Set `FENNO_API_KEY` in the launch terminal; desktop apps may not inherit it |
+| Previous provider still used | Check user configuration, CLI overrides and the selected profile; start a new conversation |
+| 404 / model not found | Check the exact ID, Responses support and base URL; do not use `/chat/completions` |
+| 401 / 403 | Check the key and permissions, rather than switching to OpenAI sign-in |
+| Text works but tools fail | Check model tool support and response content; do not disable safety approvals as a workaround |
+
+See [OpenAI's advanced configuration](https://learn.chatgpt.com/docs/config-file/config-advanced#custom-model-providers) and the [general troubleshooting guide](/en/api/integrations/others).

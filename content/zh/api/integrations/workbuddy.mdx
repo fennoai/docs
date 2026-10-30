@@ -1,0 +1,55 @@
+---
+title: "WorkBuddy 接入 Fenno API"
+description: "在 WorkBuddy 中配置 Fenno API 自定义模型，填写完整 Chat Completions 地址，设置工具调用与图片能力，并验证会话及任务执行。"
+---
+
+import { Callout } from 'nextra/components'
+
+# WorkBuddy 接入
+
+WorkBuddy 可以添加自定义模型作为任务执行的模型服务。本指南使用 Fenno API 的 OpenAI 兼容 Chat Completions 接口。
+
+## 1. 打开模型设置
+
+安装 [WorkBuddy](https://www.codebuddy.cn/workbuddy)，打开 **设置 → 模型 → 添加模型**，选择自定义 API / Custom。菜单位置可能随版本变化。
+
+## 2. 填写模型配置
+
+| 配置项 | 值 |
+| --- | --- |
+| 提供商 | 自定义 API / Custom |
+| 接口地址（完整 Endpoint） | `https://api.fenno.ai/v1/chat/completions` |
+| API Key | 你的 Fenno API Key |
+| 模型名称 / ID | 控制台中支持 Chat Completions 的精确模型 ID |
+
+这里填写的是**完整接口地址**，不是只填域名，也不是只填 `/v1`。如果新版本将地址拆成 Host 与 Path，确保拼接后的 URL 与表中一致。
+
+## 3. 按真实能力启用选项
+
+| 选项 | 何时启用 |
+| --- | --- |
+| 工具调用 | 模型支持工具调用，且需要执行工作区任务时 |
+| 图片输入 | 使用支持图片输入的模型时 |
+| 推理模式 | 模型和当前接口支持对应推理参数时 |
+
+这些开关描述模型能力，不会让不支持的模型自动获得能力。首次连通测试不要附加图片或复杂工具。
+
+## 4. 保存、选择与验证
+
+保存后检查模型列表，再回到会话，在自定义模型分组中选择刚添加的模型。发送“只回复 OK”，核对 Fenno 控制台的请求记录，然后在临时工作区验证任务执行。
+
+<Callout type="warning">
+  自定义模型的调用费用由 Fenno API 账户承担，与 WorkBuddy 自身的套餐或内置模型额度区分。授权访问工作区前，检查目录和可执行操作的范围。
+</Callout>
+
+## 常见问题
+
+| 现象 | 处理 |
+| --- | --- |
+| 接口错误 / 404 | 确认完整地址包含 `/v1/chat/completions`，且没有重复路径 |
+| 模型保存后不可选 | 刷新模型列表或重启客户端，在会话中重新选择自定义模型 |
+| 401 / 403 | 核对 Fenno Key、账户权限及模型权限 |
+| 能聊天但任务执行失败 | 核对工具调用能力、参数和工作区授权 |
+| 图片或推理参数报错 | 关闭对应选项，确认模型能力后逐项启用 |
+
+模型配置含有凭据，不要把本地 `workbuddy/models.json` 或含 Key 的截图公开。参考 [WorkBuddy 官方模型配置](https://www.codebuddy.cn/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Model)。

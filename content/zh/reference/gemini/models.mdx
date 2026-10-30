@@ -1,0 +1,37 @@
+---
+title: "Gemini 模型资源查询"
+description: "查询 Fenno Gemini 模型列表与单资源端点，正确处理 models 资源名前缀、可选生成能力和分页字段，并在调用时处理模型可用性变化。"
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# Gemini 模型资源
+
+| 方法 | 路径 | 用途 |
+| --- | --- | --- |
+| GET | `/v1beta/models` | 列出 Gemini 协议模型资源 |
+| GET | `/v1beta/models/{model}` | 查询一个资源 |
+
+使用 `https://api.fenno.ai` 与 `x-goog-api-key: <FENNO_API_KEY>`。
+
+## 列表请求
+
+```bash
+curl https://api.fenno.ai/v1beta/models   -H "x-goog-api-key: $FENNO_API_KEY"
+```
+
+响应包含 `models[]`。资源在服务提供时可能包含 `name`、`displayName`、token 限制与 `supportedGenerationMethods`。能力字段缺失应视为未知，不要自行补默认值。
+
+如果分页响应提供 `nextPageToken`，按当前路由支持的 `pageToken`、`pageSize` 继续查询，不要假设所有路由的分页方式与最大页大小都一致。
+
+## 模型资源名
+
+资源名可能形如 `models/<MODEL_ID>`。构建原始 URL 时，可将完整资源名放在 `/v1beta/` 后面；或先去掉一个 `models/` 前缀，再代入 `/v1beta/models/{model}`。不要生成 `/models/models/...`。
+
+Google GenAI SDK 接受模型 ID 或支持的 `models/...` 资源名。使用实际可用的精确标识，不要附加其他服务商的模型家族前缀。
+
+## 可用性与能力
+
+模型发现只是起点，不保证所有可选参数、工具或输入类型都能使用。应在目标账户下用小请求验证 `generateContent`，以及业务需要的流式或视觉能力。
+
+继续阅读[内容生成](/zh/reference/gemini/generate-content)和 [Gemini CLI 接入](/zh/api/integrations/gemini-cli)。

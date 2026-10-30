@@ -1,0 +1,73 @@
+---
+title: "Chat Completions endpoint reference"
+description: "Reference POST /v1/chat/completions on Fenno, including messages, model-specific options, choices, tool calls, finish reasons, token usage and SSE delta handling."
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# Chat Completions
+
+```http
+POST https://api.fenno.ai/v1/chat/completions
+Authorization: Bearer <FENNO_API_KEY>
+Content-Type: application/json
+```
+
+## Request fields
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `model` | string, required | Exact available Chat Completions model ID |
+| `messages` | array, required | Conversation history; use model-supported roles and content items |
+| `stream` | boolean | Return SSE chunks instead of one completion |
+| `temperature`, `top_p` | number, optional | Sampling controls, only where supported |
+| `max_completion_tokens` or `max_tokens` | integer, optional | Model-dependent output limit; do not assume both are accepted |
+| `tools`, `tool_choice` | array / string or object | Function definitions and selection policy |
+| `response_format` | object, optional | JSON mode or supported JSON Schema configuration |
+| `reasoning_effort` | string, optional | Model-specific reasoning control; not Responses' `reasoning` object |
+
+## Python example
+
+Install `openai`; set `FENNO_API_KEY` and `FENNO_MODEL`:
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    timeout=60.0,
+    max_retries=0,
+)
+
+response = client.chat.completions.create(
+    model=os.environ["FENNO_MODEL"],
+    messages=[
+        {"role": "system", "content": "Answer concisely."},
+        {"role": "user", "content": "What is an API gateway?"},
+    ],
+)
+print(response.choices[0].message.content)
+```
+
+Send the relevant history on each request. A chat completion ID is not a server-side conversation handle.
+
+## Response fields
+
+| Field | Meaning |
+| --- | --- |
+| `id`, `model`, `object` | Response identification and model information |
+| `choices[].message` | Assistant text and/or `tool_calls` |
+| `choices[].finish_reason` | Common values include `stop`, `length`, `tool_calls` and safety-related stops |
+| `usage` | Input/output token information when provided |
+
+Do not treat every assistant message as plain text: `content` may be absent during tool calling. An output-limit stop is not a complete structured answer.
+
+## Streaming
+
+Set `stream=True` in the SDK or `"stream": true` in JSON. Read `choices[].delta`, not `choices[].message`. Some chunks contain roles or tool arguments rather than text, and some may have empty choices. The SSE transport ends with `[DONE]`; inspect finish reasons as well.
+
+`stream_options.include_usage` is optional and model-dependent. Do not require a usage chunk to render an answer, and do not interpret its absence as zero cost.
+
+See [function calling](/en/api/guides/tool-calling), [structured output](/en/api/guides/structured-output), [streaming](/en/api/guides/streaming) and [error formats](/en/reference/errors).

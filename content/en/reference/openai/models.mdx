@@ -1,0 +1,52 @@
+---
+title: "List and retrieve available models"
+description: "Use Fenno's OpenAI-compatible model discovery endpoints to obtain exact model IDs, understand list and retrieval responses, and avoid inferring full capabilities from discovery alone."
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# Model discovery
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/v1/models` | List models visible to the current credentials |
+| GET | `/v1/models/{model}` | Retrieve one model's available metadata |
+
+Use `https://api.fenno.ai` as the host and `Authorization: Bearer <FENNO_API_KEY>`. The OpenAI SDK uses a base URL ending in `/v1`.
+
+## List models
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    timeout=60.0,
+    max_retries=0,
+)
+
+for model in client.models.list():
+    print(model.id)
+```
+
+The HTTP response follows the OpenAI list shape with `object: "list"` and `data[]` model objects. Use each `id` exactly as returned; do not add another provider's namespace or copy a display label.
+
+## Retrieve a model
+
+```python
+model = client.models.retrieve(os.environ["FENNO_MODEL"])
+print(model.id)
+```
+
+A model object may include fields such as `object`, `created` and `owned_by`. These are metadata, not a guarantee that every protocol or feature is available.
+
+## Discovery is not a capability test
+
+- A listed ID does not by itself establish context length, price, tool support, image input or Responses compatibility.
+- Access and model availability can change; handle unavailable models at request time.
+- Verify the intended endpoint with a small request and consult the account's model information.
+- Preserve a known configuration rather than randomly selecting the first listed model in production.
+
+See [model selection and capabilities](/en/api/models) and the [integration checklist](/en/api/integrations).

@@ -1,0 +1,35 @@
+---
+title: "Gemini protocol API overview"
+description: "Find Fenno Gemini-compatible content-generation, streaming and model-resource endpoints, configure the Google GenAI SDK host and API-key header, and avoid mixing protocol formats."
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# Gemini API
+
+Use `https://api.fenno.ai` as the host for native Gemini requests. The Google GenAI SDK adds its version and model-resource paths.
+
+| Method | Full path | Reference |
+| --- | --- | --- |
+| POST | `/v1beta/models/{model}:generateContent` | [Generate content](/en/reference/gemini/generate-content) |
+| POST | `/v1beta/models/{model}:streamGenerateContent?alt=sse` | [Streaming content](/en/reference/gemini/generate-content) |
+| GET | `/v1beta/models` | [Model resources](/en/reference/gemini/models) |
+| GET | `/v1beta/models/{model}` | [Model resources](/en/reference/gemini/models) |
+
+## Authentication
+
+```http
+x-goog-api-key: <FENNO_API_KEY>
+Content-Type: application/json
+```
+
+Prefer the header to a `key` query parameter to reduce credential exposure in logs. SDKs may manage authentication transport themselves; configure them without printing request URLs containing credentials.
+
+## Protocol boundaries
+
+- Input uses `contents[].parts`, not OpenAI `messages` or Anthropic `content` blocks.
+- REST generation settings use `generationConfig`; SDK helpers can expose these through `config`.
+- Output is in `candidates[].content.parts`; inspect finish reasons and safety feedback too.
+- Do not infer support for Files, cachedContents management, tuning or every native hosted tool from content-generation support.
+
+See [Gemini CLI setup](/en/api/integrations/gemini-cli), [vision inputs](/en/api/guides/vision), and the [official Gemini API reference](https://ai.google.dev/api/generate-content).

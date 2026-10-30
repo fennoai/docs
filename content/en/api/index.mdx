@@ -1,0 +1,71 @@
+---
+title: "Fenno API: model API service"
+description: "Connect applications and coding tools to Fenno API using OpenAI, Anthropic or Gemini protocols. Start with API keys, base URLs and your first request."
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# Fenno API
+
+Fenno API provides a common entry point for models available to your account through OpenAI-compatible,
+Anthropic Messages and Gemini protocols. Configure the endpoint, credentials and exact model ID,
+then verify the capabilities required by your application.
+
+<div className="fenno-hero">
+  <span className="fenno-hero-badge">Fenno API · Three protocols</span>
+  <div className="fenno-hero-title">One key,<span className="fenno-gradient-text"> multiple model choices</span></div>
+  <p className="fenno-hero-desc">Connect compatible coding tools and backend applications. Model access, supported features and usage depend on the selected model and your account.</p>
+</div>
+
+<Cards num={2}>
+  <LinkCard title="Quickstart" href="/en/api/quickstart">
+    First request in five minutes: create a key, point your SDK at Fenno, run a completion.
+  </LinkCard>
+  <LinkCard title="Authentication" href="/en/api/authentication">
+    Auth headers and SDK setup for the OpenAI, Anthropic and Gemini protocols.
+  </LinkCard>
+  <LinkCard title="Models & capabilities" href="/en/api/models">
+    Reasoning, multimodal input, tool calls, structured output, prompt caching and image generation.
+  </LinkCard>
+  <LinkCard title="API reference" href="/en/reference">
+    Chat Completions, Responses, Embeddings, image generation and more.
+  </LinkCard>
+</Cards>
+
+## Base URL
+
+| Protocol | Base URL |
+| --- | --- |
+| OpenAI compatible | `https://api.fenno.ai/v1` |
+| Anthropic native | `https://api.fenno.ai` |
+| Gemini native | `https://api.fenno.ai` |
+
+<Callout type="info">
+  Native Anthropic and Gemini SDKs append their own versioned path (`/v1/messages`,
+  `/v1beta/models/*`), so point them at the host without `/v1`. OpenAI-compatible clients expect
+  the version in the base URL, so use `https://api.fenno.ai/v1`.
+</Callout>
+
+## Supported protocols
+
+| Protocol | Typical callers | Path prefix |
+| --- | --- | --- |
+| OpenAI compatible | OpenAI SDK, Codex, Cline, OpenCode, LangChain | `/v1/*` |
+| Anthropic native | Claude Code, Anthropic SDK | `/v1/messages` |
+| Gemini native | Gemini CLI, Google GenAI SDK | `/v1beta/models/*` |
+
+## Next steps
+
+- New to Fenno? Start with [Quickstart](/en/api/quickstart).
+- Already have a key? Read [Authentication](/en/api/authentication).
+- Debugging? See [Errors & retries](/en/api/errors).
+
+## Read by task
+
+- Render incremental answers: [streaming](/en/api/guides/streaming).
+- Execute application operations: [function calling](/en/api/guides/tool-calling), with server-side authorization.
+- Extract machine-readable data: [structured output](/en/api/guides/structured-output).
+- Analyze images or build retrieval: [vision](/en/api/guides/vision), [embeddings](/en/api/guides/embeddings).
+- Operate reliably: [caching](/en/api/guides/prompt-caching), [costs](/en/api/guides/cost-management), [rate limits](/en/api/guides/rate-limits).
+
+The guide explains complete tasks; the [API reference](/en/reference) looks up protocol fields, responses and errors without duplicating the tutorials.

@@ -1,0 +1,42 @@
+---
+title: "FennoAI 模型选择"
+description: "为 FennoAI 选择或切换模型，了解支持的模型提供方、模型命名与配置方式，为代码编写和审查任务匹配合适模型。"
+---
+
+# 模型切换
+
+在任意命令或提及后加上 `-<模型>` 参数，即可切换 AI 模型。
+
+## 如何使用
+
+在任意命令末尾加上模型参数：
+
+```text
+/code -gemini 修复登录 Bug
+/review -claude
+@fennoai -deepseek 解释一下为什么这个函数很慢
+```
+
+## 支持的模型参数
+
+| 参数        | 说明                                     |
+| ----------- | ---------------------------------------- |
+| `-claude`   | 使用 Anthropic Claude 最新模型来执行任务 |
+| `-gemini`   | 使用 Google Gemini 最新模型来执行任务    |
+| `-deepseek` | 使用 DeepSeek 最新模型来执行任务         |
+| `-minimax`  | 使用 MiniMax 最新模型来执行任务          |
+| `-zhipu`    | 使用智谱 GLM 最新模型来执行任务          |
+| `-kimi`     | 使用 Moonshot Kimi 最新模型来执行任务    |
+| `-codex`    | 使用 OpenAI Codex 最新模型来执行任务     |
+
+## 默认模型
+
+不加参数时，FennoAI 使用部署配置或仓库配置中设定的默认模型。
+
+在 `.fennoai.yml` 中设置仓库默认模型：
+
+```yaml
+default_ai_provider: claude
+```
+
+详见[仓库级配置 →](/zh/ai/configuration)。

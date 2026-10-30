@@ -1,0 +1,43 @@
+---
+title: "Model API authentication headers"
+description: "Reference the Bearer, x-api-key and x-goog-api-key headers used by Fenno's model protocols, including version headers, SDK base URLs and safe credential handling."
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# Authentication headers
+
+Create a key in the [Fenno console](https://api.fenno.ai) and keep it server-side. A key's existence does not guarantee access to every model or unlimited usage. For setup steps, see the [authentication guide](/en/api/authentication).
+
+| Protocol | Authentication | Additional JSON headers |
+| --- | --- | --- |
+| OpenAI-compatible | `Authorization: Bearer <FENNO_API_KEY>` | `Content-Type: application/json` |
+| Anthropic Messages | `x-api-key: <FENNO_API_KEY>` | `anthropic-version: 2023-06-01`, `Content-Type: application/json` |
+| Gemini | `x-goog-api-key: <FENNO_API_KEY>` | `Content-Type: application/json` |
+
+The Anthropic SDK adds its normal version headers. Do not configure conflicting `api_key` and `auth_token` settings for the same request. Gemini can use a `key` query parameter where accepted, but headers reduce the risk of keys leaking through URLs and access logs.
+
+## Environment variables
+
+The guides use `FENNO_API_KEY` as an application-owned variable and pass it explicitly into SDK clients. SDKs do not all read this name automatically:
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+)
+```
+
+Tool-specific variables are documented in each [integration guide](/en/api/integrations). Restart an application when necessary after changing its environment; a GUI launched before a shell export may not inherit it.
+
+## Credential failures
+
+- `401`: check the value actually used, deleted or disabled keys, and conflicting client authentication.
+- `403`: check model access and policies instead of repeatedly rotating otherwise valid keys.
+- Redact keys in screenshots, logs and support requests. Never commit them into repository settings or frontend bundles.
+- Rotate a leaked key through the account controls available to you, then update dependent services.
+
+See the [error reference](/en/reference/errors) and [base URL overview](/en/reference).

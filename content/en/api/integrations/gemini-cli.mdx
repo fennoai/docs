@@ -1,0 +1,53 @@
+---
+title: "Gemini CLI with Fenno API"
+description: "Configure Gemini CLI's Gemini API-key authentication with Fenno's native host, choose an available model, verify a minimal request and distinguish CLI features from protocol compatibility."
+---
+
+import { Callout } from 'nextra/components'
+
+# Gemini CLI
+
+[Gemini CLI](https://github.com/google-gemini/gemini-cli) can override its Gemini API endpoint when using API-key authentication. Use Fenno's native Gemini host, not its OpenAI base URL.
+
+## 1. Prepare the CLI and credentials
+
+Install Gemini CLI using its [official installation instructions](https://geminicli.com/docs/get-started/installation/), then check:
+
+```bash
+gemini --version
+```
+
+Create a Fenno key, select a model supporting Gemini content generation, and set `FENNO_API_KEY` and `FENNO_MODEL` locally. Verify the chosen model with the [Gemini API reference](/en/reference/gemini) first.
+
+## 2. Configure API-key authentication
+
+```bash
+export GEMINI_API_KEY="$FENNO_API_KEY"
+export GOOGLE_GEMINI_BASE_URL="https://api.fenno.ai"
+gemini --model "$FENNO_MODEL"
+```
+
+If prompted, choose **Use Gemini API key**, not Google account login or Vertex AI. The base-URL override applies to this API-key path. Do not append `/v1`, `/v1beta`, or another provider's `/gemini` prefix.
+
+If you previously used Vertex AI or another endpoint, review conflicting environment variables and saved authentication. Avoid replacing an entire `settings.json` just to change one setting. Keep keys out of committed `.env` files.
+
+## 3. Verify before granting tools
+
+Start with a minimal text request:
+
+```bash
+gemini --model "$FENNO_MODEL" --prompt "Reply with OK only."
+```
+
+Check the request time, model and usage in the Fenno account records available to you. A model saying it uses Fenno is not evidence of the actual provider.
+
+Then test streaming and tools separately in a disposable workspace, keeping normal permission prompts. Do not enable unrestricted execution merely to test connectivity.
+
+## Compatibility boundaries
+
+- Gemini CLI may use additional API methods as it evolves. A successful `generateContent` call is not proof every CLI feature works through a gateway.
+- A feature requiring an unprovided method, hosted search or model-specific tool cannot be enabled just by changing the base URL.
+- For `401`, verify the selected authentication path and environment inherited by the process.
+- For `404`, inspect the final endpoint and model ID; for tool failures, check model support before changing unrelated settings.
+
+See the [official configuration reference](https://geminicli.com/docs/reference/configuration/), [Gemini endpoints](/en/reference/gemini), and [generic troubleshooting](/en/api/integrations/others).

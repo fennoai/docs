@@ -1,0 +1,71 @@
+---
+title: "FennoAI 常见问题"
+description: "查阅 FennoAI 安装配置、仓库访问、模型支持与任务行为的常见问题，了解使用限制及排查方向，帮助快速解决接入疑问。"
+---
+
+import { Details, Summary } from 'nextra/components'
+
+# 常见问题
+
+<Details open>
+<Summary>FennoAI 是免费的吗？</Summary>
+
+FennoAI 本身完全免费，但需要有 AI 模型提供商的账号。目前已对接 
+[Fenno API](https://api.fenno.ai)
+，开箱即用。
+
+</Details>
+
+<Details>
+<Summary>支持私有仓库吗？</Summary>
+
+支持。FennoAI 在 GitHub 的私有仓库中均可正常工作。
+
+</Details>
+
+<Details>
+<Summary>我的代码会被用于 AI 模型训练吗？</Summary>
+
+FennoAI 不会利用你的代码用于任何 AI 训练。
+
+</Details>
+
+<Details>
+<Summary>支持哪些编程语言？</Summary>
+
+借助模型能力，FennoAI 支持所有编程语言。
+
+</Details>
+
+<Details>
+<Summary>FennoAI 只支持 GitHub 吗？</Summary>
+
+是的。FennoAI 通过 GitHub Issue 和 Pull Request 提供服务。
+
+</Details>
+
+<Details>
+<Summary>为什么我的组织没有出现在 Settings 页面？</Summary>
+
+如果你已经在某个组织中安装了 FennoAI GitHub App，但该组织没有出现在 **Settings**
+页面，很可能是因为 App 最近申请了新的权限（如 **Organization members —
+Read-only**），而你的组织尚未接受这些权限更新。请前往组织的 **Settings →
+GitHub Apps → FennoAI**，审核并接受更新的权限，之后该组织就会出现在 Settings
+页面。
+
+</Details>
+
+<Details>
+<Summary>支持哪些 AI 模型？</Summary>
+
+Claude、DeepSeek、Gemini、MiniMax、智谱、Kimi 等主流模型。使用 Fenno API Key 可以通过一个密钥访问所有模型。详见
+[模型切换 →](/zh/ai/model-selection)。
+
+</Details>
+
+<Details>
+<Summary>如何反馈问题或提功能建议？</Summary>
+
+请在 [GitHub Issues](https://github.com/fennoai/docs/issues/new) 反馈文档问题或提出建议。也可以加入 [Discord 社区](https://discord.gg/9HFMKz4qrg) 交流；公开反馈时请移除 API Key 和私人项目内容。
+
+</Details>

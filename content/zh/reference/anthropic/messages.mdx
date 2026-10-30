@@ -1,0 +1,75 @@
+---
+title: "Messages 消息端点参考"
+description: "查询 Fenno POST /v1/messages 的必填参数、类型化内容块、stop_reason、tool_use 与 tool_result 消息，以及 Anthropic 流式事件生命周期。"
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# Messages
+
+```http
+POST https://api.fenno.ai/v1/messages
+x-api-key: <FENNO_API_KEY>
+anthropic-version: 2023-06-01
+Content-Type: application/json
+```
+
+## 请求字段
+
+| 字段 | 类型 | 含义 |
+| --- | --- | --- |
+| `model` | string，必填 | 精确的 Messages 可用模型 ID |
+| `max_tokens` | integer，必填 | 所选模型允许范围内的输出 token 上限 |
+| `messages` | array，必填 | user/assistant 历史，content 为字符串或受支持内容块 |
+| `system` | string 或 array，可选 | 放在 messages 数组外的系统指令 |
+| `stream` | boolean | 返回 message 与 content-block 事件 |
+| `tools` | array，可选 | 含 `name`、`description`、`input_schema` 的定义 |
+| `tool_choice`、`thinking` | object，可选 | 仅使用模型明确支持的取值 |
+
+## Python 示例
+
+安装 `anthropic`，设置 `FENNO_API_KEY` 和支持 Messages 的 `FENNO_MODEL`：
+
+```python
+import os
+from anthropic import Anthropic
+
+client = Anthropic(
+    base_url="https://api.fenno.ai",
+    api_key=os.environ["FENNO_API_KEY"],
+    timeout=60.0,
+    max_retries=0,
+)
+response = client.messages.create(
+    model=os.environ["FENNO_MODEL"],
+    max_tokens=512,
+    system="Answer concisely.",
+    messages=[{"role": "user", "content": "What is an API gateway?"}],
+)
+for block in response.content:
+    if block.type == "text":
+        print(block.text)
+print(response.stop_reason)
+```
+
+## 内容块与结束原因
+
+`content[]` 不一定只有一个文本块。应按 `type` 处理文本、图片／文档输入、`tool_use` 和受支持的 thinking 块，并在延续对话时保留模型需要的非文本块。
+
+常见结束原因有 `end_turn`、`max_tokens`、`stop_sequence` 和 `tool_use`。`tool_use` 表示应用应处理受允许的工具调用，不应直接当作最终回答；`max_tokens` 可能意味着输出不完整。
+
+执行工具时，保留 assistant 的 `tool_use` 块，通过 user 消息里的 `tool_result` 回传对应 `tool_use_id`。不要混用 Chat Completions 的 `role: tool` 消息。
+
+## 流式生命周期
+
+```text
+message_start
+content_block_start -> content_block_delta* -> content_block_stop
+message_delta -> message_stop
+```
+
+流中可能有多个内容块、ping 和错误事件。增量可能承载文本、部分工具 JSON 或思考内容，需按块索引关联，收齐工具参数后再解析。
+
+SDK 的 `client.messages.stream(...)` 上下文管理器可通过 `text_stream` 读取简单文本；使用工具的应用还必须处理非文本内容和最终结束原因。
+
+继续阅读[函数调用](/zh/api/guides/tool-calling)、[提示缓存](/zh/api/guides/prompt-caching)和[错误格式](/zh/reference/errors)。

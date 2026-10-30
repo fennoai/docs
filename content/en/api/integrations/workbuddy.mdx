@@ -1,0 +1,55 @@
+---
+title: "WorkBuddy with Fenno API"
+description: "Add a custom Fenno API model in WorkBuddy using the full Chat Completions endpoint. Configure tool and image capabilities and verify task execution."
+---
+
+import { Callout } from 'nextra/components'
+
+# WorkBuddy
+
+WorkBuddy supports custom models for task execution. This guide uses Fenno API's OpenAI-compatible Chat Completions endpoint.
+
+## 1. Open model settings
+
+Install [WorkBuddy](https://www.codebuddy.cn/workbuddy), open **Settings → Models → Add model**, and select Custom API / Custom. Menu locations can vary by version.
+
+## 2. Enter the model settings
+
+| Setting | Value |
+| --- | --- |
+| Provider | Custom API / Custom |
+| API address (full endpoint) | `https://api.fenno.ai/v1/chat/completions` |
+| API key | Your Fenno API key |
+| Model name / ID | Exact available model ID supporting Chat Completions |
+
+Enter the **complete endpoint**, not just the domain or `/v1`. If your version separates Host and Path, the assembled URL must match the table.
+
+## 3. Enable supported capabilities
+
+| Option | Enable when |
+| --- | --- |
+| Tool calling | The model supports tools and you need workspace actions |
+| Image input | The model accepts images |
+| Reasoning | The model and endpoint accept the corresponding reasoning parameters |
+
+These switches describe capabilities; they do not add them to a model. Keep the first connection test free of images and complex tools.
+
+## 4. Save, select and verify
+
+Save and confirm the model appears in the list. Return to a conversation and select it under custom models. Ask “Reply with OK only”, match the Fenno usage record, then test task execution in a disposable workspace.
+
+<Callout type="warning">
+  Custom-model requests are billed to your Fenno API account, separately from WorkBuddy subscriptions or built-in model allowances. Review workspace paths and action permissions before granting access.
+</Callout>
+
+## Troubleshooting
+
+| Symptom | Action |
+| --- | --- |
+| Endpoint error / 404 | Include `/v1/chat/completions` exactly once |
+| Saved model missing from the picker | Refresh or restart the client, then select the custom model in the conversation |
+| 401 / 403 | Check the Fenno key, account access and model permissions |
+| Chat works but tasks fail | Check tool support, arguments and workspace permissions |
+| Image or reasoning errors | Disable the feature, check model support and enable options individually |
+
+Model configuration contains credentials. Do not publish `workbuddy/models.json` or screenshots containing keys. See the [official WorkBuddy model guide](https://www.codebuddy.cn/docs/workbuddy/From-Beginner-to-Expert-Guide/Function-Description/Model).

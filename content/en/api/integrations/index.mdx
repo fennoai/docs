@@ -1,0 +1,65 @@
+---
+title: "Tool integration guides"
+description: "Connect coding agents, desktop apps and SDKs to Fenno API. Compare client protocols and follow configuration, verification and troubleshooting guides."
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# Tool integrations
+
+Most tools need three settings: **API address, Fenno API key, and model ID**. Choose a guide for your tool before configuring it: addresses are not interchangeable between protocols.
+
+## Choose your workflow
+
+<Cards num={2}>
+  <LinkCard title="Terminal coding" href="/en/api/integrations/claude-code">
+    Connect Claude Code, Codex or OpenCode to a provider and start in your project directory.
+  </LinkCard>
+  <LinkCard title="Editor assistants" href="/en/api/integrations/cline">
+    Configure Cline or Cursor and check which editor features actually use your API key.
+  </LinkCard>
+  <LinkCard title="Desktop chat" href="/en/api/integrations/cherry-studio">
+    Add a provider in Cherry Studio or Chatbox, enable models and start a conversation.
+  </LinkCard>
+  <LinkCard title="Application development" href="/en/api/integrations/openai-sdk">
+    Use the OpenAI Python or JavaScript SDK for regular requests and streaming output.
+  </LinkCard>
+</Cards>
+
+## Before you start
+
+1. Create an API key in the [Fenno console](https://api.fenno.ai) and check your available quota.
+2. Copy an **exact model ID** from the console or model list. Do not use a display name or invent a provider prefix.
+3. Check protocol and capability support. Codex needs Responses; coding agents also need streaming and tool calling.
+4. Back up existing configuration. Use a new conversation and a simple prompt before allowing changes to an important project.
+
+<Callout type="warning">
+  A tool subscription and Fenno API usage are billed separately. Bringing your own key does not unlock every paid client feature or make requests free.
+</Callout>
+
+## Tools and protocols
+
+| Tool | Connection used in this guide | Documentation |
+| --- | --- | --- |
+| <IntegrationIcon name="cc-switch" /> CC Switch | Manage Claude Code / Codex providers | [Setup](/en/api/integrations/cc-switch) |
+| <IntegrationIcon name="deepseek-harness" /> DeepSeek Harness | Custom model provider | [Setup](/en/api/integrations/deepseek-harness) |
+| <IntegrationIcon name="workbuddy" /> WorkBuddy | Custom Chat Completions model | [Setup](/en/api/integrations/workbuddy) |
+| <IntegrationIcon name="claude-code" /> Claude Code | Anthropic Messages | [Setup](/en/api/integrations/claude-code) |
+| <IntegrationIcon name="codex" /> Codex | OpenAI Responses | [Setup](/en/api/integrations/codex) |
+| <IntegrationIcon name="opencode" /> OpenCode | Custom OpenAI-compatible provider | [Setup](/en/api/integrations/opencode) |
+| <IntegrationIcon name="cline" /> Cline | OpenAI Compatible | [Setup](/en/api/integrations/cline) |
+| <IntegrationIcon name="cursor" /> Cursor | Custom OpenAI endpoint, subject to client restrictions | [Compatibility and setup](/en/api/integrations/cursor) |
+| <IntegrationIcon name="cherry-studio" /> Cherry Studio | Custom OpenAI provider | [Setup](/en/api/integrations/cherry-studio) |
+| <IntegrationIcon name="chatbox" /> Chatbox | Custom OpenAI-compatible provider | [Setup](/en/api/integrations/chatbox) |
+| <IntegrationIcon name="openai-sdk" /> OpenAI SDK | Server-side Python / JavaScript | [Migration](/en/api/integrations/openai-sdk) |
+| <IntegrationIcon name="gemini-cli" /> Gemini CLI | Native Gemini API-key authentication | [Setup](/en/api/integrations/gemini-cli) |
+| <IntegrationIcon name="zed" /> Zed | Custom OpenAI-compatible provider | [Setup](/en/api/integrations/zed) |
+| <IntegrationIcon name="langchain" /> LangChain | ChatOpenAI with a custom endpoint | [Setup](/en/api/integrations/langchain) |
+| <IntegrationIcon name="llamaindex" /> LlamaIndex | OpenAILike and a separate embedding adapter | [Setup](/en/api/integrations/llamaindex) |
+| Other tools | Match the host, base URL and request path to the protocol | [General setup](/en/api/integrations/others) |
+
+## Verify the actual connection
+
+Send “Reply with OK only”, then match the request time, model and usage in the Fenno console. **A model claiming to use Fenno is not proof of routing**.
+
+Test streaming, image input and tool calling separately after the text request works. A working connection does not imply support for every capability. See the [general checklist](/en/api/integrations/others) and [errors and retries](/en/api/errors).

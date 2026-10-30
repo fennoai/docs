@@ -1,0 +1,60 @@
+---
+title: "Zed 编辑器接入 Fenno API"
+description: "在 Zed 中添加 Fenno OpenAI 兼容提供方，配置 api_url 与 available_models，将密钥保存在系统钥匙串，先验证聊天再测试 Agent 工具。"
+---
+
+import { Callout } from 'nextra/components'
+
+# Zed
+
+[Zed](https://zed.dev) 支持自定义 OpenAI 兼容提供方。当前配置使用 `language_models.openai_compatible`，不要未核对安装版本就套用旧提供方格式。
+
+## 1. 添加提供方
+
+通过命令面板运行 `agent: open settings`，在 **LLM Providers** 中选择 **Add Provider**，添加自定义 OpenAI 兼容提供方：
+
+| 配置 | 内容 |
+| --- | --- |
+| 提供方 ID | `fenno` |
+| API URL | `https://api.fenno.ai/v1` |
+| 模型 | Fenno 账户实际可用的精确 ID |
+| 上下文窗口 | 不超过模型实际能力的已确认预算 |
+
+## 2. 也可以修改配置文件
+
+将下面这段合并进现有设置，不要替换整个文件：
+
+```json
+{
+  "language_models": {
+    "openai_compatible": {
+      "fenno": {
+        "api_url": "https://api.fenno.ai/v1",
+        "available_models": [
+          {
+            "name": "<MODEL_ID>",
+            "display_name": "Fenno model",
+            "max_tokens": 8192
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+替换 `<MODEL_ID>`。`8192` 是给 Zed 的示例上下文预算，不是模型真实上限，也不是输出 token 设置，应按所选模型和业务调整。
+
+## 3. 保存 API Key
+
+在提供方设置界面填写 Key，Zed 会保存到系统钥匙串，而不是 `settings.json`。也可使用进程环境：提供方 ID `fenno` 对应 `FENNO_API_KEY`，非空环境变量可能优先于钥匙串值。
+
+已经运行的图形界面应用不一定继承新的 shell 变量，建议优先使用设置界面，或从目标环境启动／重启 Zed。不要将带真实密钥的 `api_key` 字段写进共享设置。
+
+## 4. 核对当前模型
+
+在 Agent 面板选择 Fenno 提供方和模型，用新会话发送“只回复 OK”，并检查实际账户用量。再在测试项目中执行一个安全的工具操作，保留正常权限确认。
+
+工具和图片能力必须与实际模型匹配，Zed 的一个配置开关不会创建模型能力。Zed 托管模型、订阅和其他编辑器功能，也与 Fenno 用量分别处理。
+
+出错时核对当前提供方、实际凭据、精确模型 ID 和最终 `/v1/chat/completions` 路径。继续阅读 [Zed 官方 API 接入说明](https://zed.dev/docs/ai/use-api-access)与[通用排错](/zh/api/integrations/others)。

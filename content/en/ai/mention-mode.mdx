@@ -1,0 +1,63 @@
+---
+title: "Mention FennoAI in GitHub"
+description: "Mention @fennoai in GitHub issues and pull requests to ask questions, request changes or review code. Learn how to give useful task context."
+---
+
+# Mention Mode
+
+In any Issue or PR comment, mention `@fennoai` followed by a natural language description of what you need. No specific syntax required — just describe the problem or question in plain language.
+
+```text
+@fennoai <your request in natural language>
+```
+
+## When to Use Mention Mode
+
+Mention Mode is for conversation — FennoAI always responds with text: analysis, explanations, recommendations, or open-ended discussion. It does not write code or open PRs in this mode.
+
+Use it when:
+
+- **You have a bug but aren't sure what's causing it** — Describe the symptom, let FennoAI analyze the root cause
+- **You want AI to explain code** — Paste a snippet or point to a file and ask what it does
+- **You're exploring a design decision** — Discuss tradeoffs before committing to an approach
+
+When you're ready to take action (write code, review a PR, generate a plan), switch to [Commands →](/en/ai/commands).
+
+## Example: Analyze a bug
+
+```text
+@fennoai The login endpoint is returning 401 for valid tokens
+after our Redis upgrade. Can you check what might have changed?
+```
+
+FennoAI will look at recent changes to the auth code and the Redis client configuration, then explain the likely cause.
+
+## Example: Explain code
+
+```text
+@fennoai Can you explain what the `reconcileState` function does
+and why it loops three times?
+```
+
+## Example: Discuss a design decision
+
+```text
+@fennoai We're deciding between using a message queue vs direct
+HTTP calls for our notification service. Given our current
+architecture, what do you recommend?
+```
+
+## Example: Ask about next steps
+
+```text
+@fennoai The PR has two failing tests. What should I do to fix them
+without breaking the existing behavior?
+```
+
+## Mention Mode vs Commands
+
+|              | Mention Mode                      | Commands (`/code`, `/review`, etc.)  |
+| ------------ | --------------------------------- | ------------------------------------ |
+| **Input**    | Natural language                  | Slash command                        |
+| **Output**   | Text response only                | Code PR, review comments, plan doc   |
+| **Best for** | Analysis, discussion, exploration | Specific actions with clear outcomes |

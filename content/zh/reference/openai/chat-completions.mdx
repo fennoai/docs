@@ -1,0 +1,73 @@
+---
+title: "Chat Completions 端点参考"
+description: "查询 Fenno POST /v1/chat/completions 的消息、模型参数、choices、工具调用、结束原因、token 用量及 SSE 增量读取方式。"
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# Chat Completions
+
+```http
+POST https://api.fenno.ai/v1/chat/completions
+Authorization: Bearer <FENNO_API_KEY>
+Content-Type: application/json
+```
+
+## 请求字段
+
+| 字段 | 类型 | 含义 |
+| --- | --- | --- |
+| `model` | string，必填 | 实际可用的 Chat Completions 模型 ID |
+| `messages` | array，必填 | 对话历史，角色与内容类型需模型支持 |
+| `stream` | boolean | 返回 SSE 分片，而不是一次性响应 |
+| `temperature`、`top_p` | number，可选 | 模型支持时的采样控制 |
+| `max_completion_tokens` 或 `max_tokens` | integer，可选 | 依模型而定的输出限制，不保证两者都接受 |
+| `tools`、`tool_choice` | array / string 或 object | 函数定义与工具选择策略 |
+| `response_format` | object，可选 | JSON 模式或受支持的 JSON Schema 配置 |
+| `reasoning_effort` | string，可选 | 模型相关的推理控制，不是 Responses 的 `reasoning` 对象 |
+
+## Python 示例
+
+安装 `openai`，设置 `FENNO_API_KEY` 与 `FENNO_MODEL`：
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    timeout=60.0,
+    max_retries=0,
+)
+
+response = client.chat.completions.create(
+    model=os.environ["FENNO_MODEL"],
+    messages=[
+        {"role": "system", "content": "Answer concisely."},
+        {"role": "user", "content": "What is an API gateway?"},
+    ],
+)
+print(response.choices[0].message.content)
+```
+
+每次请求需要携带相关历史，chat completion ID 不是服务端会话句柄。
+
+## 响应字段
+
+| 字段 | 含义 |
+| --- | --- |
+| `id`、`model`、`object` | 响应标识与模型信息 |
+| `choices[].message` | assistant 文本和／或 `tool_calls` |
+| `choices[].finish_reason` | 常见为 `stop`、`length`、`tool_calls` 或安全相关结束原因 |
+| `usage` | 服务返回时的输入与输出 token 信息 |
+
+不要假设每条 assistant 消息都有纯文本；工具调用时 `content` 可能为空。达到输出上限也不代表结构化答案完整。
+
+## 流式响应
+
+SDK 使用 `stream=True`，JSON 使用 `"stream": true`。读取 `choices[].delta`，不是 `choices[].message`。部分分片只有角色或工具参数，也可能出现空 choices。SSE 以 `[DONE]` 结束，同时仍要检查结束原因。
+
+`stream_options.include_usage` 是依模型而定的可选项，不应因为缺少 usage 分片就拒绝展示回答，也不能把缺失当成零费用。
+
+继续阅读[函数调用](/zh/api/guides/tool-calling)、[结构化输出](/zh/api/guides/structured-output)、[流式响应](/zh/api/guides/streaming)和[错误格式](/zh/reference/errors)。

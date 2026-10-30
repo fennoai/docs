@@ -1,0 +1,87 @@
+---
+title: "OpenCode 接入 Fenno API"
+description: "在 OpenCode 中添加 Fenno API 自定义提供商，区分 Chat Completions 与 Responses 适配器，引用环境变量密钥并选择可用模型。"
+---
+
+import { Callout } from 'nextra/components'
+
+# OpenCode 接入
+
+OpenCode 支持自定义提供商。本指南配置一个名为 `fenno` 的 OpenAI 兼容提供商，不假设客户端已经内置 Fenno。
+
+## 1. 准备环境
+
+安装方式参见 [OpenCode 官方文档](https://opencode.ai/docs/)。安装后确认版本，并在启动终端设置 Key：
+
+```bash
+opencode --version
+export FENNO_API_KEY="<YOUR_FENNO_API_KEY>"
+```
+
+Windows PowerShell 使用 `$env:FENNO_API_KEY = "<YOUR_FENNO_API_KEY>"`。桌面客户端不一定继承 shell 环境变量，若变量缺失，请使用其自定义提供商设置或从具备该变量的环境启动。
+
+## 2. 添加自定义提供商
+
+在项目的 `opencode.json`，或全局 `~/.config/opencode/opencode.json` 中合并以下配置：
+
+```json filename="opencode.json"
+{
+  "$schema": "https://opencode.ai/config.json",
+  "model": "fenno/<YOUR_MODEL_ID>",
+  "provider": {
+    "fenno": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Fenno",
+      "options": {
+        "baseURL": "https://api.fenno.ai/v1",
+        "apiKey": "{env:FENNO_API_KEY}"
+      },
+      "models": {
+        "<YOUR_MODEL_ID>": { "name": "Fenno coding model" }
+      }
+    }
+  }
+}
+```
+
+将两处 `<YOUR_MODEL_ID>` 替换为相同的精确模型 ID。
+
+- `provider.fenno` 的 `fenno` 是 OpenCode 本地提供商 ID。
+- `models` 对象的键是发送给 Fenno 的模型 ID。
+- 顶层 `model` 使用 `提供商ID/模型ID`，因此会比网关模型 ID 多一层 `fenno/`。
+- `{env:FENNO_API_KEY}` 在启动时读取环境变量，避免把 Key 写入仓库。
+
+## 3. 选择模型并验证
+
+启动 `opencode` 后用 `/models` 选择 Fenno 模型。也可以在测试项目里运行：
+
+```bash
+opencode run -m "fenno/<YOUR_MODEL_ID>" "Reply with OK only. Do not modify files."
+```
+
+到 Fenno 控制台确认实际请求，再单独测试工具调用。
+
+## Chat Completions 与 Responses
+
+| 所需协议 | `npm` 配置 | 最终端点 |
+| --- | --- | --- |
+| Chat Completions | `@ai-sdk/openai-compatible` | `/v1/chat/completions` |
+| Responses | `@ai-sdk/openai` | `/v1/responses` |
+
+<Callout type="warning">
+  更换适配器前先确认模型支持对应协议。不要仅因为模型名包含 Codex，就假设它能通过 Chat Completions 调用。
+</Callout>
+
+如需配置上下文与输出上限，使用模型实际支持的值；不要照抄其他供应商的限额。
+
+## 常见问题
+
+| 现象 | 处理 |
+| --- | --- |
+| 模型不出现在 `/models` | 检查配置文件位置、JSON 语法与 `models` 的键 |
+| Provider / model not found | 核对本地提供商 ID 和 `fenno/模型ID` 格式 |
+| 401 | 检查启动环境里的 Key，环境变量缺失会被替换为空字符串 |
+| 404 / 不支持的接口 | 核对适配器、协议、Base URL 与模型能力 |
+| 配置看似不生效 | 检查项目配置是否覆盖全局配置，重启客户端 |
+
+参考 [OpenCode 官方提供商文档](https://opencode.ai/docs/providers/)与[配置文档](https://opencode.ai/docs/config/)。

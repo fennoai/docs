@@ -1,0 +1,61 @@
+---
+title: "Cherry Studio with Fenno API"
+description: "Add Fenno API to Cherry Studio, enable models and test a chat. Check endpoint paths, protocol selection and separate image or embedding capabilities."
+---
+
+import { Callout } from 'nextra/components'
+
+# Cherry Studio
+
+[Cherry Studio](https://cherry-ai.com) is a desktop AI client. Start with OpenAI-compatible chat, then enable additional features only when your selected model supports them.
+
+## Prerequisites
+
+Install Cherry Studio and prepare a Fenno API key plus a model ID that supports Chat Completions. Copy the ID from the [Fenno console](https://api.fenno.ai) or [model list](/en/reference/openai/models).
+
+## 1. Add a provider
+
+Open **Settings → Model Service → Add**. Name the provider `Fenno` and select **OpenAI**, or the equivalent OpenAI-compatible type in your version.
+
+| Setting | Value |
+| --- | --- |
+| Provider name | `Fenno` |
+| API key | Your Fenno API key |
+| API address | `https://api.fenno.ai/v1` |
+| Model ID | Exact ID copied from the console |
+
+Keep the default Chat Completions mode for the first test. Do not enable several protocols or extra parameters at once.
+
+## 2. Add and enable models
+
+1. Open **Manage** or **Fetch models** in the provider settings.
+2. Add the models you want to the enabled list. If discovery fails, add an exact ID manually.
+3. Enable the provider, return to chat and select a model under **Fenno**.
+
+An entry in the model picker confirms configuration, not permission to call that model with your current key.
+
+## 3. Test a conversation
+
+Run the client's connection check with your chosen model. Then start a new conversation, send “Reply with OK only”, and verify the corresponding request in the Fenno console.
+
+If discovery fails but a manually added model works, check which model and protocol the discovery test uses. A provider icon alone is not proof of connectivity.
+
+## Responses and other capabilities
+
+If your version offers **Responses** mode, enable it only for a model that supports Responses. The base URL remains `https://api.fenno.ai/v1`.
+
+<Callout type="info">
+  Image input, image generation and knowledge-base embeddings are separate capabilities. They may use different models and endpoints. Configure and test them separately after chat works.
+</Callout>
+
+## Troubleshooting
+
+| Symptom | Check |
+| --- | --- |
+| Provider missing from the picker | Enable the provider and add models to its enabled list |
+| Empty model list | Check the URL, key and access; try an exact ID manually |
+| 404 / missing route | The chat request must target `/v1/chat/completions`, without a repeated `/v1` |
+| Chat works but images or tools fail | Check model capabilities, protocol and client feature settings |
+| 401 / 429 | See [errors and retries](/en/api/errors) rather than repeatedly running connection tests |
+
+Menu labels vary by version. See the [official Cherry Studio documentation](https://docs.cherry-ai.com/).

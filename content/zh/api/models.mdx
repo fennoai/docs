@@ -1,0 +1,57 @@
+---
+title: "模型与 API 能力"
+description: "按文本生成、多模态、工具调用、结构化输出与流式需求选择 Fenno API 模型，了解模型 ID、协议支持及能力差异。"
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# 模型与能力
+
+Fenno 通过通用 API 协议减少重复接入工作，但各协议仍有自己的鉴权 Header、请求字段和流式事件，应按实际使用的端点查阅对应参考。
+
+<Callout type="info">
+  具体可用的模型清单以控制台展示为准，并会随上游开放情况调整。本页只说明能力维度与
+  调用方式，不维护静态模型列表。下列每项能力都需要所选模型和路由支持，不代表所有模型通用。
+</Callout>
+
+## 能力矩阵
+
+| 能力 | 说明 | 典型端点 |
+| --- | --- | --- |
+| 文本生成 | 对话、补全、长文写作、代码生成 | `/v1/chat/completions`、`/v1/responses`、`/v1/messages` |
+| 多模态输入 | 图片、PDF 等作为输入内容 | 同上（消息内容改为数组结构） |
+| 工具调用 | Function Calling / Tool Use，可并行或多轮 | 同上（`tools` 字段） |
+| 结构化输出 | 仅支持的 OpenAI 兼容模型与请求 | Chat 使用 `response_format`；Responses 使用 `text.format` |
+| 推理模式 | 能力与预算依模型而定 | Chat、Responses、Messages 的推理字段不同，按端点查询 |
+| 提示缓存 | 复用长前缀，降低重复上下文成本 | 同上（自动或显式缓存标记） |
+| 流式响应 | 增量返回，便于实时展示 | 同上（`stream: true`） |
+| 图像生成 | 文生图、图像编辑 | `/v1/images/generations`、`/v1/images/edits` |
+| 向量化 | Embeddings | `/v1/embeddings` |
+
+## 模型标识
+
+模型使用字符串标识，常见写法有 `gpt-*`、`claude-*`、`gemini-*` 等。建议：
+
+- 在代码里把模型名集中为常量或配置项，便于切换；
+- 生产环境固定具体版本，避免“最新别名”带来的行为漂移；
+- 灰度时按 Key 或业务维度分流，而不是在客户端做随机选择。
+
+## 协议选择建议
+
+<Cards num={2}>
+  <LinkCard title="已有 OpenAI 集成" href="/zh/reference/openai">
+    只改 base_url 与 api_key，其余请求体与响应体保持 OpenAI 形态。
+  </LinkCard>
+  <LinkCard title="Claude Code / Anthropic SDK" href="/zh/reference/anthropic">
+    使用 /v1/messages，保留 Messages API 的 content block 结构。
+  </LinkCard>
+  <LinkCard title="Gemini SDK / Gemini CLI" href="/zh/reference/gemini">
+    使用 /v1beta/models/*，保留 generateContent 与流式接口。
+  </LinkCard>
+</Cards>
+
+## 计费与能力确认
+
+以控制台和实际账单中当前模型的计费定义为准，不要仅凭 HTTP 失败或 usage 缺失就认定没有费用。参阅[用量与成本管理](/zh/api/guides/cost-management)。
+
+模型出现在列表中不代表全部端点、图片、工具或缓存能力都可用，应按业务逐项验证。[模型查询](/zh/reference/openai/models)只负责发现 ID，不是完整能力探测。

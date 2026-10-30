@@ -1,0 +1,92 @@
+---
+title: "函数调用与工具执行"
+description: "通过 Fenno API 完成工具定义、模型请求、参数校验、执行与结果回传，区分 OpenAI、Responses 和 Anthropic 的调用格式及安全边界。"
+---
+
+import { Callout } from 'nextra/components'
+
+# 函数调用
+
+模型提出工具名称和参数，应用决定是否执行、如何执行。API 不会替你运行本地函数。先选用支持工具调用的模型，并完成[快速开始](/zh/api/quickstart)。
+
+## 完成一次工具调用闭环
+
+下面用无副作用的本地加法工具演示。安装 `openai`，并设置 `FENNO_API_KEY` 和 `FENNO_MODEL`。
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    timeout=60.0,
+    max_retries=0,
+)
+import json
+
+tools = [{
+    "type": "function",
+    "function": {
+        "name": "add",
+        "description": "Add two numbers.",
+        "parameters": {
+            "type": "object",
+            "properties": {"a": {"type": "number"}, "b": {"type": "number"}},
+            "required": ["a", "b"],
+            "additionalProperties": False,
+        },
+    },
+}]
+messages = [{"role": "user", "content": "Use add to calculate 12 + 30."}]
+first = client.chat.completions.create(
+    model=os.environ["FENNO_MODEL"], messages=messages, tools=tools,
+)
+message = first.choices[0].message
+if message.tool_calls:
+    messages.append(message.model_dump(exclude_none=True))
+    for call in message.tool_calls:
+        if call.function.name != "add":
+            raise ValueError("Tool not allowed")
+        args = json.loads(call.function.arguments)
+        if set(args) != {"a", "b"} or any(type(v) not in (int, float) for v in args.values()):
+            raise ValueError("Invalid arguments")
+        result = {"sum": args["a"] + args["b"]}
+        messages.append({
+            "role": "tool", "tool_call_id": call.id, "content": json.dumps(result),
+        })
+    final = client.chat.completions.create(
+        model=os.environ["FENNO_MODEL"], messages=messages,
+    )
+    print(final.choices[0].message.content)
+else:
+    print(message.content)
+```
+
+最后一次请求故意不再提供工具，让示例在一轮工具调用后结束。生产 Agent 可以继续循环，但必须限制工具轮数、总耗时和成本。
+
+## 按协议匹配格式
+
+| 协议 | 工具定义 | 模型请求 | 应用回传 |
+| --- | --- | --- | --- |
+| Chat Completions | `tools[].function` | `message.tool_calls[]` | `tool` 消息，携带对应 `tool_call_id` |
+| Responses | `tools[]` 中平铺的函数字段 | `output[]` 中的 `function_call` 项 | `function_call_output`，通过 `call_id` 关联 |
+| Anthropic Messages | `name`、`description`、`input_schema` | `tool_use` 内容块 | user 消息中的 `tool_result`，通过 `tool_use_id` 关联 |
+
+先把 assistant 的完整工具调用消息放进历史，再追加执行结果；每个调用都要有对应结果。响应 ID 和工具调用 ID 不能混用。手动维护 Responses 历史时，也要保留相关的非文本输出项。
+
+## 工具选择与并行调用
+
+在模型支持的前提下，`tool_choice` 可允许模型自行选择、禁用工具或指定某个工具，不同协议的写法不同。“要求模型调用工具”不等于给工具授予执行权限。
+
+模型可能一次请求多个工具。只有相互独立、可安全执行的只读操作才适合并行，每个结果都必须绑定自己的调用 ID。流式参数要收齐后再验证。
+
+## 执行安全边界
+
+- 服务端同时校验 JSON 和业务约束；schema 不能代替权限检查。
+- 使用明确的工具白名单，不执行模型生成的任意代码，也不动态查找任意函数。
+- 支付、删除、部署等副作用操作应要求确认。
+- 为副作用操作设置超时、结果大小限制和应用级去重。
+- 工具结果同样是不可信输入，不要把密钥放进回传给模型的结果。
+
+继续阅读[流式输出](/zh/api/guides/streaming)、[Chat Completions](/zh/reference/openai/chat-completions)、[Responses](/zh/reference/openai/responses)和 [Messages](/zh/reference/anthropic/messages)。

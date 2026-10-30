@@ -1,0 +1,92 @@
+---
+title: "JSON mode and structured output"
+description: "Choose JSON mode or JSON Schema with Fenno's OpenAI-compatible APIs, use response_format for Chat Completions and text.format for Responses, and validate complete results."
+---
+
+import { Callout } from 'nextra/components'
+
+# Structured output
+
+Use structured output for extraction, classification and machine-readable responses. Check support for both the model and the chosen endpoint. This guide covers OpenAI-compatible requests; do not copy these fields into Anthropic or Gemini bodies.
+
+## Choose a format
+
+| Mode | What it constrains | What your application still validates |
+| --- | --- | --- |
+| Prompt only | A natural-language request to return JSON | Syntax, schema and business rules |
+| JSON mode | JSON syntax, on supported models | Required fields, types and business rules |
+| JSON Schema | A supported schema, with strict mode where available | Completion status, refusals and business meaning |
+
+JSON mode uses `response_format={"type": "json_object"}` in Chat Completions. Include an explicit instruction to return JSON. It does not enforce your field names or types.
+
+## Chat Completions with a schema
+
+Install `openai`, set `FENNO_API_KEY` and `FENNO_MODEL`, then run:
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    timeout=60.0,
+    max_retries=0,
+)
+import json
+
+schema = {
+    "type": "object",
+    "properties": {
+        "summary": {"type": "string"},
+        "status": {"type": "string", "enum": ["ok", "needs_review"]},
+    },
+    "required": ["summary", "status"],
+    "additionalProperties": False,
+}
+result = client.chat.completions.create(
+    model=os.environ["FENNO_MODEL"],
+    messages=[{"role": "user", "content": "Summarize: The order arrived damaged."}],
+    response_format={
+        "type": "json_schema",
+        "json_schema": {"name": "ticket", "strict": True, "schema": schema},
+    },
+)
+choice = result.choices[0]
+if choice.finish_reason != "stop" or choice.message.refusal:
+    raise RuntimeError("No complete structured result")
+data = json.loads(choice.message.content)
+print(data)
+```
+
+`json.loads` checks JSON syntax, not the whole schema. Validate the parsed object with your application's schema validator before writing to a database or triggering a workflow.
+
+## Responses uses text.format
+
+Using the same `client` and `schema`, a Responses-capable model expects a different field layout:
+
+```python
+response = client.responses.create(
+    model=os.environ["FENNO_MODEL"],
+    input="Summarize: The order arrived damaged.",
+    text={"format": {
+        "type": "json_schema", "name": "ticket", "strict": True, "schema": schema,
+    }},
+)
+if response.status != "completed":
+    raise RuntimeError("Incomplete response")
+data = json.loads(response.output_text)
+print(data)
+```
+
+Chat Completions nests the schema under `response_format.json_schema`; Responses puts `name`, `schema` and `strict` directly under `text.format`. Do not send `response_format` to Responses.
+
+## Handle failures explicitly
+
+- A refusal, safety block or output limit may prevent a complete structured result. Handle these states before parsing.
+- Partial JSON in a stream is not a completed object. Do not execute actions from incremental fragments.
+- Start with a small schema: explicit object types, required properties and `additionalProperties: false`. The supported JSON Schema subset varies by model.
+- Never turn a validation failure into success by silently dropping fields or stripping arbitrary text.
+- Schema-valid output can still contain wrong or unauthorized business values.
+
+See [Chat Completions](/en/reference/openai/chat-completions), [Responses](/en/reference/openai/responses), and the [official format migration guide](https://developers.openai.com/api/docs/guides/migrate-to-responses).

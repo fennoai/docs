@@ -1,0 +1,56 @@
+---
+title: "Embeddings endpoint reference"
+description: "Reference Fenno POST /v1/embeddings, including text batches, optional dimensions and encoding, indexed vector results, usage and model-specific input limits."
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# Embeddings API
+
+```http
+POST https://api.fenno.ai/v1/embeddings
+Authorization: Bearer <FENNO_API_KEY>
+Content-Type: application/json
+```
+
+## Request fields
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `model` | string, required | An available embedding model, not a chat model |
+| `input` | string or array, required | Text or a supported batch of inputs |
+| `dimensions` | integer, optional | Only for models accepting dimension reduction |
+| `encoding_format` | string, optional | A supported format such as `float`; do not assume every model supports alternatives |
+
+Models impose their own single-input, total-token and batch limits. Split oversized content in the application; do not silently truncate text needed for retrieval.
+
+## Python example
+
+Install `openai`; set `FENNO_API_KEY` and `FENNO_EMBEDDING_MODEL`:
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    timeout=60.0,
+    max_retries=0,
+)
+
+response = client.embeddings.create(
+    model=os.environ["FENNO_EMBEDDING_MODEL"],
+    input=["Database backup guide", "Database restore guide"],
+)
+for item in response.data:
+    print(item.index, len(item.embedding))
+```
+
+## Response
+
+`data[]` contains vectors with `index`, `object` and `embedding`; `model` identifies the model and `usage` reports token usage when provided. Use `index` to map vectors back to input records.
+
+For float encoding, `embedding` is an array of numbers. If another encoding is selected, decode it according to that encoding rather than passing it directly into a vector index.
+
+Do not mix vectors from different models or dimensions. Store the embedding configuration with the index and use it consistently for queries. See [semantic retrieval](/en/api/guides/embeddings) for the full workflow.

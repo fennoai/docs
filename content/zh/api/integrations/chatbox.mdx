@@ -1,0 +1,53 @@
+---
+title: "Chatbox 接入 Fenno API"
+description: "在 Chatbox 中添加 Fenno API 自定义提供方，区分 API Host、Base URL 与请求路径，添加精确模型 ID 并排查连接错误。"
+---
+
+import { Callout } from 'nextra/components'
+
+# Chatbox 接入
+
+[Chatbox](https://chatboxai.app) 支持自定义模型提供方。本指南使用 OpenAI 兼容模式，不需要选择某个内置网关品牌。
+
+## 1. 添加提供方
+
+打开 **设置 → 模型提供方 → 添加**，名称填写 `Fenno`，API 模式选择 **OpenAI API 兼容**。
+
+## 2. 填写地址和密钥
+
+不同版本可能把地址拆成 Host 与 Path，也可能只提供一个 Base URL。按你看到的字段填写：
+
+| 界面字段 | 填写内容 |
+| --- | --- |
+| API Host / API 主机（与 Path 分开） | `https://api.fenno.ai` |
+| API Path / 请求路径（单独填写时） | `/v1/chat/completions` |
+| Base URL（不单独提供 Path 时） | `https://api.fenno.ai/v1` |
+| API Key | 你的 Fenno API Key |
+
+**最终的聊天请求地址应为 `https://api.fenno.ai/v1/chat/completions`。** 如果报 404，先核对拼接结果，而不是在每个字段都补一个 `/v1`。
+
+## 3. 添加模型
+
+点击**获取**模型列表并添加需要的模型；也可以手动填写控制台里的精确模型 ID。展示名称可以自定义，但发送给 API 的 ID 必须一致。
+
+保存后，在会话的模型选择器里选择 **Fenno** 下的模型，不要继续使用原来的默认提供方。
+
+## 4. 测试连接
+
+先使用**检查**按钮，再新建会话发送“只回复 OK”。到 Fenno 控制台核对请求时间和模型，确认请求确实使用了新提供方。
+
+<Callout type="warning">
+  普通对话接通不代表图片生成、联网搜索或工具调用都可用。这些功能还取决于 Chatbox 版本、所选协议与模型能力。先关闭额外功能排查基础连接。
+</Callout>
+
+## 常见问题
+
+| 现象 | 处理 |
+| --- | --- |
+| 404 | 检查 Host 和 Path 是否重复包含 `/v1` 或 `/chat/completions` |
+| 401 | 检查 Key 来源、是否完整复制，重新保存提供方 |
+| 模型不在下拉列表 | 添加模型并启用；必要时手动填写精确 ID |
+| 检测成功但新对话失败 | 检查会话选择的提供方、模型和额外能力设置 |
+| 只有旧会话正常 | 新建会话验证，避免旧会话沿用不同的模型设置 |
+
+参考 [Chatbox 自定义提供方官方说明](https://chatboxai.app/en)。

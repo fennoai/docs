@@ -1,0 +1,160 @@
+---
+title: "FennoAI 定时任务"
+description: "通过控制台或仓库配置创建 FennoAI 定时任务，了解调度规则、执行行为和 fork 仓库限制，安排周期性代码与维护工作。"
+---
+
+import { Callout } from 'nextra/components'
+
+# 定时任务
+
+FennoAI 支持按固定时间自动运行 AI 任务，适合日报汇总、周期性代码检查、知识库整理、例行维护等场景。
+
+你可以通过两种方式创建定时任务：
+
+- **控制台**：在控制台中手动创建和管理任务
+- **仓库配置**：在默认分支的 `.fennoai.yml` 中声明 `schedule:` 任务
+
+## 什么时候适合用定时任务
+
+- 每天生成 Issue / PR 摘要
+- 定期扫描仓库中的 TODO、失败用例或过期依赖
+- 周期性整理文档、知识库或发布说明
+- 在固定时间触发例行分析，不依赖人工评论
+
+## 方式一：通过控制台创建
+
+在控制台的 Scheduled 页面中，你可以直接创建一个任务。当前可配置字段包括：
+
+- `Task Name`：任务名称，同一仓库内需要唯一
+- `Repository`：可选的关联仓库和执行分支
+- `Runtime`：`codex` 或 `claudecode`
+- `Timezone`：Cron 使用的 IANA 时区
+- `Cron Expression`：5 段 cron 表达式
+- `Prompt`：交给 AI 的执行说明
+
+示例：
+
+```text
+Task Name: Daily review summary
+Repository: acme/platform@main
+Runtime: codex
+Timezone: Asia/Shanghai
+Cron Expression: 0 9 * * *
+Prompt: Summarize the last 24 hours of merged PRs and open issues, then draft a short engineering update.
+```
+
+创建后，你可以在控制台中：
+
+- 查看任务列表
+- 立即触发一次运行
+- 查看运行历史
+- 查看任务执行状态、会话和实时事件
+- 编辑、暂停、归档手工创建的任务
+
+## 方式二：通过 `.fennoai.yml` 声明
+
+如果你希望把定时规则和仓库一起管理，可以在默认分支添加 `.fennoai.yml`：
+
+```yaml
+default_runtime: claudecode
+
+schedule:
+  - name: Daily issue triage
+    cron: "0 9 * * *"
+    timezone: Asia/Shanghai
+    prompt: "Review newly opened issues in the last 24 hours, group them by theme, and draft a triage summary."
+
+  - name: Weekly dependency check
+    cron: "0 10 * * 1"
+    runtime: codex
+    repositories:
+      - repository: acme/platform
+        branch: main
+    prompt: "Check dependency updates merged in the last 7 days and summarize any follow-up work needed."
+```
+
+每个 `schedule` 任务支持这些字段：
+
+- `name`：任务名，必填，同一仓库内唯一
+- `cron`：5 段 cron 表达式，必填
+- `prompt`：任务提示词，必填
+- `runtime`：可选，未设置时使用 `default_runtime`
+- `timezone`：可选，未设置时使用服务端默认时区
+- `repositories`：可选的单仓库列表；省略时使用当前仓库和 `branch` / 默认分支
+
+`schedule:` 任务中，旧 `provider`、`agent` 和 `default_ai_provider` 字段仍可在迁移期读取；新的 `schedule` 条目应使用 `runtime`，不能再选择 model。`schedule:` 之外，`default_ai_provider` 与按 Provider 配置的 `model` 仍是当前有效的仓库配置，详见[仓库配置](/zh/ai/configuration)。
+
+### 配置文件路径
+
+推荐使用 `.fennoai.yml`。同时兼容这些旧路径：
+
+- `.fennoai.yml`
+- `.xgopilot.yml`
+- `.github/fennoai.yml`
+- `.github/xgopilot.yml`
+
+FennoAI 会按优先级读取第一个找到的文件。
+
+## Cron 规则
+
+- 使用标准 **5 段** cron：`分钟 小时 日 月 星期`
+- 最小执行间隔为 **1 小时**
+- 不支持秒级表达式
+
+常见示例：
+
+```text
+0 9 * * *    每天 09:00
+0 */6 * * *  每 6 小时
+0 10 * * 1   每周一 10:00
+0 9 1 * *    每月 1 日 09:00
+```
+
+## 同步与生效方式
+
+控制台手工创建的任务在保存后即可生效。
+
+仓库内 `schedule:` 任务的同步方式不同：
+
+- FennoAI 仅在**非 fork 仓库的默认分支收到 push** 后重新读取定时任务配置；fork 中的 `schedule:` 不会自动登记或恢复，控制台手工创建的任务不受此限制
+- 新增或修改 `schedule` 后，需要把配置提交到默认分支
+- 删除某个 `schedule` 项后，对应的 in-repo 任务也会被删除
+
+这意味着仅在功能分支修改配置、但未合入默认分支时，线上任务不会更新。
+
+## 控制台与仓库任务的边界
+
+通过 `.fennoai.yml` 创建的任务可以在控制台中查看和手动触发，但不能在控制台中：
+
+- 编辑
+- 暂停 / 恢复
+- 删除
+
+这类任务的真实来源始终是仓库配置文件。
+
+<Callout type="warning">
+  通过仓库配置创建的定时任务，以默认分支中的配置文件为准；不要在控制台中尝试修改这类任务。
+</Callout>
+
+## 限制与注意事项
+
+- 单个仓库最多支持 `20` 个 `schedule` 任务
+- 单个 `schedule` 任务最多关联一个仓库
+- 单个任务名最长 `200` 个字符
+- `runtime` 只能填写已配置的 scheduled runtime
+- `.fennoai.yml` 里只适合放模型与调度相关配置，不要写 API Key 等敏感信息
+
+## 常见问题
+
+### 为什么我改了 `.fennoai.yml`，任务没有立刻更新？
+
+因为 `schedule:` 任务是在默认分支 push 后同步的。请确认修改已经进入默认分支，并且仓库产生了新的 push。
+
+### 为什么 控制台 里不能编辑某些任务？
+
+如果任务来源于 `.fennoai.yml`，控制台 只提供查看和触发能力，编辑入口由仓库配置管理。
+
+### 应该优先用哪种方式？
+
+- 想快速创建、由 控制台 集中管理：用 **控制台**
+- 想把定时规则纳入版本管理、随仓库演进：用 **`.fennoai.yml`**

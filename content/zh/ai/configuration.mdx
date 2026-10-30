@@ -1,0 +1,111 @@
+---
+title: "FennoAI 仓库级配置"
+description: "使用 .fennoai.yml 为仓库配置 FennoAI，了解可用设置、默认分支配置与修改生效方式，统一团队的 Agent 使用习惯。"
+---
+
+import { Callout } from 'nextra/components'
+
+# 仓库级配置
+
+在仓库中放置 `.fennoai.yml` 文件，为该仓库定制 FennoAI 的行为。此文件是可选的 —— 不放也能正常工作，FennoAI 会使用合理的默认值。
+
+## 文件位置
+
+配置文件可以放在以下任一位置（按优先级从高到低）：
+
+```
+your-repo/
+├── .fennoai.yml              ← 最高优先级
+├── .xgopilot.yml             ← 兼容旧文件名
+└── .github/
+    ├── fennoai.yml           ← GitHub 风格
+    └── xgopilot.yml          ← 兼容旧文件名
+```
+
+FennoAI 按顺序检查这些路径，使用第一个找到的文件。
+
+## 可配置选项
+
+仓库级配置支持**模型设置和执行环境选择**。敏感信息（API Key、Base URL 等）通过全局配置和环境变量管理，不在仓库配置中设置。
+
+### 设置默认 AI 模型
+
+```yaml
+# .fennoai.yml
+default_ai_provider: claude
+```
+
+支持的值：`claude`、`deepseek`、`gemini`、`minimax`、`kimi`、`zhipu`、`codex`
+
+### 指定执行环境
+
+使用 `environment_id` 为该仓库新建的 Issue/PR 任务 Session（包括 review）选择环境：
+
+```yaml
+# .fennoai.yml
+environment_id: env_xxx
+```
+
+填写已存在且 FennoAI 可访问的 AgentAPI 环境 ID，最长 128 字节。该值优先于服务端 Agent 配置中的环境，不改变 Agent、runtime 或模型选择。省略该字段或设为空字符串时，使用服务端默认环境。
+
+能修改默认分支配置的人，可以选择服务端 AgentAPI 凭据有权访问的环境。FennoAI 没有额外的仓库或组织环境白名单。部署管理员必须将该凭据的访问范围限制在所服务仓库获授权的环境内；共用可访问多个租户环境的凭据不能提供仓库级隔离。
+
+已有 Session 恢复时保留原环境。修改默认分支上的配置后，需等待仓库配置缓存刷新（平台读取的缓存约为 5 分钟），再发起新的 Issue/PR 任务（例如使用 `/code`、`/plan` 或 `/review`）创建采用新环境的 Session。发起任务本身不会刷新该缓存；仍使用旧版本地仓库缓存的部署需要先更新该缓存。
+
+执行重试沿用本次选定的环境。环境不存在、不可访问或未就绪时，新建 Session 会明确失败，不会回退到默认环境。仓库配置读取、解析或校验失败也会中止任务；配置文件不存在时仍使用默认设置。
+
+目前该字段适用于 Issue/PR 的主任务 Session；内部 outcome-rubric 评分 Session 仍使用服务端配置的环境。控制台会话和定时任务暂未接入。环境创建、构建和托管不由此字段完成。
+
+### 控制谁可以触发 FennoAI
+
+使用 `require_member_to_trigger` 控制是否仅允许仓库成员触发 `@fennoai` 和斜杠命令。
+
+```yaml
+# .fennoai.yml
+require_member_to_trigger: true
+```
+
+当该字段未设置时，默认行为为：
+
+- 公开仓库：`true`（仅成员可触发）
+
+常见示例：
+
+```yaml
+# 公开仓库放开限制：允许任意用户触发
+require_member_to_trigger: false
+```
+
+### 自定义 Provider 模型
+
+可以为每个 Provider 覆盖具体的模型名称：
+
+```yaml
+# .fennoai.yml
+default_ai_provider: claude
+
+claude:
+  model: 'claude-sonnet-4'
+
+# deepseek:
+#   model: "deepseek/deepseek-v3.2-251201"
+
+# gemini:
+#   model: "gemini-3.0-pro-preview"
+```
+
+<Callout type="warning">
+  **注意**：仓库配置中的 Provider 字段只能设置模型名称。API Key、Base URL 等敏感配置仍然从全局配置和环境变量读取。
+</Callout>
+
+## 配置生效方式
+
+大多数 `.fennoai.yml` 配置会在后续请求中自动生效，无需重启或重新部署。FennoAI 会从默认分支读取该文件。
+
+如果你配置了 `schedule:` 定时任务，需要注意：
+
+- 定时任务会在**默认分支收到 push** 后同步
+- 仅修改功能分支中的配置，不会立刻更新线上定时任务
+- 任务的详细说明见[定时任务](/zh/ai/scheduled-tasks)
+
+配置优先级：**命令行参数 > 仓库配置 > 全局配置**

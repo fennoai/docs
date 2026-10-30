@@ -1,0 +1,55 @@
+---
+title: "FennoAI overview"
+description: "Use FennoAI as an AI coding agent in GitHub issues and pull requests. Explore supported models and workflows for code changes, reviews and automation."
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# FennoAI
+
+FennoAI is a coding Agent that works inside GitHub. Describe a task in an issue or pull request and let it inspect the repository, write code, run tests and propose changes without moving context between tools.
+
+<div className="fenno-hero">
+  <span className="fenno-hero-badge">FennoAI · Agent</span>
+  <div className="fenno-hero-title">Your AI teammate,<span className="fenno-gradient-text"> right in GitHub</span></div>
+  <p className="fenno-hero-desc">Go from analysis to implementation, review pull requests and schedule recurring tasks in familiar GitHub workflows, with discussion, changes and validation kept together.</p>
+</div>
+
+<Cards num={2}>
+  <LinkCard title="Quick start" href="/en/ai/quick-start">
+    Install the GitHub App, authorize a repository and make your first @fennoai request.
+  </LinkCard>
+  <LinkCard title="Mention mode" href="/en/ai/mention-mode">
+    Ask questions, investigate problems or discuss a design in natural language.
+  </LinkCard>
+  <LinkCard title="Command reference" href="/en/ai/commands">
+    Use /code, /review and /plan to direct implementation, review and planning tasks.
+  </LinkCard>
+  <LinkCard title="Scheduled tasks" href="/en/ai/scheduled-tasks">
+    Set up recurring checks, summaries and maintenance through the console or repository configuration.
+  </LinkCard>
+</Cards>
+
+## How it works
+
+| Entry point | Typical work |
+| --- | --- |
+| GitHub issue | Investigate a problem, plan a fix and open a pull request |
+| GitHub pull request | Review changes, address feedback and improve an implementation |
+| Scheduled task | Produce summaries, check code and dependencies, maintain documentation |
+
+## Models and configuration
+
+Use a **Fenno API key** for models available to your account, or configure another provider. FennoAI supports providers including Claude, DeepSeek, Gemini, MiniMax, Zhipu and Kimi. Specific models and capabilities depend on your account and configuration.
+
+- [Model selection](/en/ai/model-selection): choose models for different tasks.
+- [Repository configuration](/en/ai/configuration): set repository defaults in `.fennoai.yml`.
+- [Fenno API documentation](/en/api): explore model endpoints, authentication and tool integrations.
+
+<Callout type="info">
+  Agent output still needs review. Check code changes, test results and permissions before merging. Start with a test repository and a small, well-scoped task.
+</Callout>
+
+## Next steps
+
+New to FennoAI? Follow the [quick start](/en/ai/quick-start). Explore [use cases](/en/ai/use-cases) for practical workflows, or read the [FAQ](/en/ai/faq) and [open an issue](https://github.com/fennoai/docs/issues/new) when something is unclear.

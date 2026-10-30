@@ -1,0 +1,42 @@
+---
+title: "Model API error response formats"
+description: "Inspect Fenno API error envelopes across OpenAI, Anthropic and Gemini protocols, distinguish HTTP and stream failures, and use status, structured codes and request IDs for diagnosis."
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# Error response formats
+
+The examples below illustrate common protocol envelopes; exact messages and optional fields vary. Error text is not a stable machine-readable contract. Request format failures and upstream failures can differ.
+
+## OpenAI
+
+```json
+{"error": {"message": "Invalid API key", "type": "invalid_request_error", "code": "invalid_api_key"}}
+```
+
+## Anthropic Messages
+
+```json
+{"type": "error", "error": {"type": "authentication_error", "message": "Invalid API key"}}
+```
+
+## Gemini
+
+```json
+{"error": {"code": 400, "message": "Invalid argument", "status": "INVALID_ARGUMENT"}}
+```
+
+## HTTP status and optional metadata
+
+Common failures include `400` for invalid requests, `401` for authentication, `403` for access restrictions, `404` for a missing route or model, `402` for insufficient credit, `429` for throttling or quota, and `5xx` for gateway or upstream failures. Read the structured error as well as the status; a model-not-found error alone does not establish a permanent model outage.
+
+Keep a request/correlation ID and `Retry-After` when returned, but handle their absence. `Retry-After` can be seconds or an HTTP date. Do not assume every route provides identical rate-limit headers.
+
+## Errors after streaming begins
+
+An SSE connection can initially return HTTP `200` and fail later. Handle protocol error events and incomplete terminal states. Network EOF without the expected completion signal should not be treated as a complete answer.
+
+Do not send an upstream HTML error page to a JSON parser without checking its content type. If you operate a proxy, preserve a safe status and sanitized error details instead of exposing raw infrastructure messages.
+
+See [errors and retries](/en/api/errors) for recovery decisions and [streaming](/en/api/guides/streaming) for event handling.

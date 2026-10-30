@@ -1,0 +1,97 @@
+---
+title: "Responses endpoint reference"
+description: "Reference Fenno POST /v1/responses with input items, instructions, text.format schemas, typed output, function_call_output, streaming events and explicit state-management boundaries."
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# Responses
+
+```http
+POST https://api.fenno.ai/v1/responses
+Authorization: Bearer <FENNO_API_KEY>
+Content-Type: application/json
+```
+
+Choose a model and route with Responses support. The endpoint's existence does not imply support for every OpenAI-hosted tool or response-storage feature.
+
+## Request fields
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `model` | string, required | Exact Responses-capable model ID |
+| `input` | string or array | Text or typed input items |
+| `instructions` | string, optional | Top-level system/developer guidance |
+| `stream` | boolean | Return typed SSE events |
+| `max_output_tokens` | integer, optional | Output cap, according to model support |
+| `tools`, `tool_choice` | array / string or object | Responses-format tools and selection policy |
+| `text.format` | object, optional | Output format, including supported JSON Schema |
+| `reasoning` | object, optional | Model-supported reasoning configuration |
+
+`messages`, Chat's nested function definition, and `response_format` are not interchangeable with these fields.
+
+## Python example
+
+Install `openai`; set `FENNO_API_KEY` and a Responses-capable `FENNO_MODEL`:
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    timeout=60.0,
+    max_retries=0,
+)
+
+response = client.responses.create(
+    model=os.environ["FENNO_MODEL"],
+    instructions="Answer concisely.",
+    input="What is an API gateway?",
+)
+print(response.status)
+print(response.output_text)
+```
+
+`output_text` is an SDK convenience property that collects text output. When parsing raw JSON, inspect `output[]` items and their content; do not expect a top-level `output_text` field.
+
+## Output and conversation history
+
+The response includes an `id`, `status`, typed `output` items and usage when available. Handle `incomplete` and failed responses instead of interpreting any returned text as a complete success.
+
+For manually managed conversations, append relevant `response.output` items to your input history, then add the next user message or tool result. Preserve reasoning or other non-text items that the selected model needs. Instructions for the next request must also be supplied deliberately.
+
+Do not rely on `previous_response_id`, stored-response retrieval or `conversation` state without separately verifying that behavior for your route. These examples use explicit history rather than a hosted state guarantee.
+
+## Function tools
+
+Responses places function fields directly in the tool object:
+
+```json
+{
+  "type": "function",
+  "name": "lookup_order",
+  "description": "Look up an order the current user is allowed to access.",
+  "parameters": {
+    "type": "object",
+    "properties": {"order_id": {"type": "string"}},
+    "required": ["order_id"],
+    "additionalProperties": false
+  }
+}
+```
+
+An output `function_call` contains `name`, JSON-encoded `arguments` and `call_id`. After validating and executing an allowed tool, return an input item such as:
+
+```json
+{"type":"function_call_output","call_id":"<CALL_ID>","output":"{\"status\":\"shipped\"}"}
+```
+
+Use the model's actual `call_id`, not the response ID. Keep associated output items in history and apply your own permission checks.
+
+## Streaming events
+
+Common events include `response.created`, `response.output_text.delta`, `response.output_item.done` and `response.completed`. Function argument deltas are separate from text. Handle `response.incomplete`, `response.failed` and `error` explicitly; do not use Chat Completions' `[DONE]` logic as the only success test.
+
+See [structured output](/en/api/guides/structured-output), [tool calling](/en/api/guides/tool-calling), and [official Responses migration guidance](https://developers.openai.com/api/docs/guides/migrate-to-responses).

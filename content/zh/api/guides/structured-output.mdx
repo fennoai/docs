@@ -1,0 +1,92 @@
+---
+title: "JSON 模式与结构化输出"
+description: "在 Fenno OpenAI 兼容接口中选择 JSON 模式或 JSON Schema，正确区分 Chat Completions 的 response_format 与 Responses 的 text.format，并验证完整结果。"
+---
+
+import { Callout } from 'nextra/components'
+
+# 结构化输出
+
+数据提取、分类和自动化处理适合使用结构化输出。先确认模型与端点都支持所需模式。本页针对 OpenAI 兼容请求，不要把这些字段直接放进 Anthropic 或 Gemini 请求体。
+
+## 选择输出约束
+
+| 模式 | 约束范围 | 应用仍需验证 |
+| --- | --- | --- |
+| 仅提示词 | 用自然语言要求返回 JSON | 语法、schema 与业务规则 |
+| JSON 模式 | 支持模型上的 JSON 语法 | 必填字段、字段类型和业务规则 |
+| JSON Schema | 模型支持的 schema，可用时启用严格模式 | 完成状态、拒绝响应与业务含义 |
+
+Chat Completions 的 JSON 模式使用 `response_format={"type": "json_object"}`，并在提示词中明确要求 JSON。它不保证字段名称与类型满足你的业务定义。
+
+## Chat Completions 的 schema 示例
+
+安装 `openai`，设置 `FENNO_API_KEY` 和 `FENNO_MODEL` 后运行：
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    timeout=60.0,
+    max_retries=0,
+)
+import json
+
+schema = {
+    "type": "object",
+    "properties": {
+        "summary": {"type": "string"},
+        "status": {"type": "string", "enum": ["ok", "needs_review"]},
+    },
+    "required": ["summary", "status"],
+    "additionalProperties": False,
+}
+result = client.chat.completions.create(
+    model=os.environ["FENNO_MODEL"],
+    messages=[{"role": "user", "content": "Summarize: The order arrived damaged."}],
+    response_format={
+        "type": "json_schema",
+        "json_schema": {"name": "ticket", "strict": True, "schema": schema},
+    },
+)
+choice = result.choices[0]
+if choice.finish_reason != "stop" or choice.message.refusal:
+    raise RuntimeError("No complete structured result")
+data = json.loads(choice.message.content)
+print(data)
+```
+
+`json.loads` 只检查 JSON 语法，不会验证整个 schema。写入数据库或触发工作流前，还要使用应用的 schema 校验器验证解析后的对象。
+
+## Responses 使用 text.format
+
+沿用同一个 `client` 和 `schema`，支持 Responses 的模型使用另一套字段布局：
+
+```python
+response = client.responses.create(
+    model=os.environ["FENNO_MODEL"],
+    input="Summarize: The order arrived damaged.",
+    text={"format": {
+        "type": "json_schema", "name": "ticket", "strict": True, "schema": schema,
+    }},
+)
+if response.status != "completed":
+    raise RuntimeError("Incomplete response")
+data = json.loads(response.output_text)
+print(data)
+```
+
+Chat Completions 将 schema 放在 `response_format.json_schema` 下；Responses 则把 `name`、`schema`、`strict` 直接放在 `text.format` 下。不要向 Responses 发送 `response_format`。
+
+## 明确处理失败状态
+
+- 拒绝响应、安全拦截和输出长度限制都可能使结构化结果不完整，应先检查状态再解析。
+- 流中的部分 JSON 不是完整对象，不能根据增量片段执行操作。
+- 从小 schema 开始，明确对象类型、必填字段及 `additionalProperties: false`。不同模型支持的 JSON Schema 子集可能不同。
+- 不要通过静默丢字段或随意截取文本，把验证失败伪装成成功。
+- 满足 schema 的结果仍可能包含错误或无权限使用的业务值。
+
+继续阅读 [Chat Completions](/zh/reference/openai/chat-completions)、[Responses](/zh/reference/openai/responses)和[官方格式迁移说明](https://developers.openai.com/api/docs/guides/migrate-to-responses)。

@@ -1,0 +1,35 @@
+---
+title: "Anthropic Messages API overview"
+description: "Find Fenno's Anthropic-compatible Messages and input-token-counting endpoints, configure the native SDK host and version header, and understand content-block compatibility limits."
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# Anthropic Messages API
+
+The Anthropic SDK base URL is `https://api.fenno.ai`. It adds `/v1/messages` itself; do not use the OpenAI `/v1` base URL in this SDK.
+
+| Method | Path | Reference |
+| --- | --- | --- |
+| POST | `/v1/messages` | [Create a message](/en/reference/anthropic/messages) |
+| POST | `/v1/messages/count_tokens` | [Count input tokens](/en/reference/anthropic/token-counting) |
+
+## Headers
+
+```http
+x-api-key: <FENNO_API_KEY>
+anthropic-version: 2023-06-01
+Content-Type: application/json
+```
+
+## Differences from Chat Completions
+
+- System guidance is the top-level `system`, not an arbitrary system message inside `messages`.
+- `max_tokens` is required for message generation.
+- `content` can contain text, images, documents, tool calls, tool results or model-specific blocks.
+- Tool schemas use `input_schema`; results use `tool_result` blocks in user messages.
+- Streaming uses named message/content-block events instead of Chat delta objects.
+
+Model access, vision, thinking and caching remain model-specific. Do not assume support for upstream hosted tools, batches or files because the Anthropic SDK includes those APIs.
+
+For general ID discovery, see [model queries](/en/reference/openai/models); a model-list entry alone does not prove native Messages support. See [Claude Code setup](/en/api/integrations/claude-code) and the [official Messages documentation](https://platform.claude.com/docs/en/api/messages).

@@ -1,0 +1,92 @@
+---
+title: "Function calling and tool execution"
+description: "Build a complete tool-calling round trip with Fenno API, validate tool arguments, return matching call results and distinguish OpenAI, Responses and Anthropic message formats."
+---
+
+import { Callout } from 'nextra/components'
+
+# Function calling
+
+The model proposes a tool name and arguments; your application decides whether and how to execute it. The API does not run your local functions. Choose a tool-capable model and complete the [quickstart](/en/api/quickstart) first.
+
+## A complete round trip
+
+This Python example uses a harmless local calculator. Install `openai` and set `FENNO_API_KEY` and `FENNO_MODEL`.
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    timeout=60.0,
+    max_retries=0,
+)
+import json
+
+tools = [{
+    "type": "function",
+    "function": {
+        "name": "add",
+        "description": "Add two numbers.",
+        "parameters": {
+            "type": "object",
+            "properties": {"a": {"type": "number"}, "b": {"type": "number"}},
+            "required": ["a", "b"],
+            "additionalProperties": False,
+        },
+    },
+}]
+messages = [{"role": "user", "content": "Use add to calculate 12 + 30."}]
+first = client.chat.completions.create(
+    model=os.environ["FENNO_MODEL"], messages=messages, tools=tools,
+)
+message = first.choices[0].message
+if message.tool_calls:
+    messages.append(message.model_dump(exclude_none=True))
+    for call in message.tool_calls:
+        if call.function.name != "add":
+            raise ValueError("Tool not allowed")
+        args = json.loads(call.function.arguments)
+        if set(args) != {"a", "b"} or any(type(v) not in (int, float) for v in args.values()):
+            raise ValueError("Invalid arguments")
+        result = {"sum": args["a"] + args["b"]}
+        messages.append({
+            "role": "tool", "tool_call_id": call.id, "content": json.dumps(result),
+        })
+    final = client.chat.completions.create(
+        model=os.environ["FENNO_MODEL"], messages=messages,
+    )
+    print(final.choices[0].message.content)
+else:
+    print(message.content)
+```
+
+The final request intentionally omits tools so this example ends after one tool round. A production agent can repeat the cycle, but must cap tool rounds, time and cost.
+
+## Match the protocol
+
+| Protocol | Tool definition | Model's request | Application's result |
+| --- | --- | --- | --- |
+| Chat Completions | `tools[].function` | `message.tool_calls[]` | A `tool` message with matching `tool_call_id` |
+| Responses | Flat function fields in `tools[]` | `output[]` item with `type: function_call` | `function_call_output` linked by `call_id` |
+| Anthropic Messages | `name`, `description`, `input_schema` | `tool_use` content block | A user `tool_result` block with matching `tool_use_id` |
+
+Keep the assistant's entire tool-call message in history before adding results. Return one result for each call; do not confuse a response ID with a tool-call ID. For Responses, also preserve relevant non-text output items when manually carrying history.
+
+## Selection and parallel calls
+
+`tool_choice` can allow the model to choose, disable tools, or request a particular tool where supported. Its shape differs by protocol. An instruction to call a tool does not grant that tool permission to perform an operation.
+
+Models can request multiple calls. Execute independent read-only calls concurrently only when safe, and associate each result with its own ID. In a stream, collect all argument fragments before validating them.
+
+## Execution safeguards
+
+- Validate JSON and business rules on the server. A schema is not an authorization check.
+- Use an explicit allowlist; never evaluate model-generated code or resolve arbitrary function names.
+- Require confirmation for payments, deletion, deployment or other side effects.
+- Apply timeouts, output-size limits and application-level deduplication to side-effecting operations.
+- Treat tool output as untrusted input too. Do not expose secrets in results sent back to the model.
+
+See [streaming](/en/api/guides/streaming), [Chat Completions](/en/reference/openai/chat-completions), [Responses](/en/reference/openai/responses) and [Messages](/en/reference/anthropic/messages).

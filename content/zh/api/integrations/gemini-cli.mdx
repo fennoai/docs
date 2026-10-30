@@ -1,0 +1,53 @@
+---
+title: "Gemini CLI 接入 Fenno API"
+description: "通过 Gemini CLI 的 API Key 认证和原生 Gemini 地址接入 Fenno，选择可用模型、验证最小请求，并区分 CLI 功能与协议兼容性的边界。"
+---
+
+import { Callout } from 'nextra/components'
+
+# Gemini CLI
+
+[Gemini CLI](https://github.com/google-gemini/gemini-cli) 在使用 API Key 认证时可以覆盖 Gemini API 地址。这里应填写 Fenno 原生 Gemini 主机，而不是 OpenAI 的 Base URL。
+
+## 1. 准备客户端与密钥
+
+按[官方安装说明](https://geminicli.com/docs/get-started/installation/)安装，确认版本：
+
+```bash
+gemini --version
+```
+
+准备 Fenno Key、支持 Gemini 内容生成的模型，并在本地设置 `FENNO_API_KEY` 和 `FENNO_MODEL`。建议先按 [Gemini API 参考](/zh/reference/gemini)确认模型可以调用。
+
+## 2. 配置 API Key 认证
+
+```bash
+export GEMINI_API_KEY="$FENNO_API_KEY"
+export GOOGLE_GEMINI_BASE_URL="https://api.fenno.ai"
+gemini --model "$FENNO_MODEL"
+```
+
+出现认证选择时使用 **Use Gemini API key**，不要选择 Google 账号登录或 Vertex AI。该地址覆盖适用于 API Key 认证链路，不要追加 `/v1`、`/v1beta` 或其他服务商的 `/gemini` 前缀。
+
+此前使用过 Vertex AI 或其他地址时，应检查冲突的环境变量和已保存认证，不要为改一个选项而覆盖整个 `settings.json`。密钥也不能放进会提交到仓库的 `.env`。
+
+## 3. 先验证，再开放工具
+
+先发送最小文本请求：
+
+```bash
+gemini --model "$FENNO_MODEL" --prompt "Reply with OK only."
+```
+
+在 Fenno 账户可查看的记录中核对时间、模型和用量。模型自述“使用 Fenno”不能证明真实供应商。
+
+随后再在可丢弃工作区里分别验证流式和工具能力，保留正常的权限确认，不要为了测连通就开放无限制执行。
+
+## 兼容边界与排错
+
+- Gemini CLI 迭代时可能调用更多 API；`generateContent` 成功，不代表所有客户端功能均能通过网关运行。
+- 依赖尚未提供的方法、托管搜索或模型专用工具的功能，不能仅靠改地址启用。
+- 遇到 `401` 时核对认证路径与进程实际继承的环境。
+- 遇到 `404` 时核对最终路径和模型 ID；工具失败时先确认模型能力，不要修改无关配置。
+
+继续阅读[官方配置参考](https://geminicli.com/docs/reference/configuration/)、[Gemini 端点](/zh/reference/gemini)与[通用排错](/zh/api/integrations/others)。

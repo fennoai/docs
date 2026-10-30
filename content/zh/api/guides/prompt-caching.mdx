@@ -1,0 +1,68 @@
+---
+title: "提示缓存与上下文复用"
+description: "为 Fenno 模型组织稳定提示前缀，区分自动缓存与显式 cache_control，通过用量字段验证命中，不假设所有模型具有相同阈值、时效与折扣。"
+---
+
+import { Callout } from 'nextra/components'
+
+# 提示缓存
+
+支持缓存的模型与路由可以减少重复输入前缀的处理。它不是“答案缓存”：相同提示词仍可能得到不同回答，也仍会产生输出用量。
+
+## 组织稳定前缀
+
+把复用的系统指令、工具定义和参考资料放在前面，将每次变化的问题放在后面，并保持前缀内容与顺序稳定。时间戳、随机 ID 和用户特有信息放得过早，都可能降低复用效果。
+
+不同租户的上下文仍要分别鉴权，不能为了提高缓存命中而扩大私有资料的访问范围。
+
+## 自动缓存与显式缓存
+
+| 方式 | 应用需要做什么 | 必须验证什么 |
+| --- | --- | --- |
+| 自动前缀缓存 | 复用相同的受支持前缀 | 模型、路由、最低可缓存输入及命中计数 |
+| Anthropic 风格显式缓存 | 在支持的位置添加 `cache_control` | 所选模型对标记和前缀的支持 |
+
+下面仅适用于明确支持 `cache_control` 的 Messages 模型与路由。安装 `anthropic`，设置 `FENNO_API_KEY`、`FENNO_MODEL`，并将自己的可复用资料写入 `FENNO_REFERENCE_TEXT`：
+
+```python
+import os
+from anthropic import Anthropic
+
+client = Anthropic(
+    base_url="https://api.fenno.ai",
+    api_key=os.environ["FENNO_API_KEY"],
+    max_retries=0,
+)
+response = client.messages.create(
+    model=os.environ["FENNO_MODEL"],
+    max_tokens=256,
+    system=[{
+        "type": "text",
+        "text": "You are a support assistant. " + os.environ["FENNO_REFERENCE_TEXT"],
+        "cache_control": {"type": "ephemeral"},
+    }],
+    messages=[{"role": "user", "content": "Summarize the support rules."}],
+)
+print(response.usage)
+```
+
+很短的测试前缀可能不满足缓存条件；加了标记也不能证明已经写入或读取缓存。本页不意味着 Fenno 提供独立的 Gemini `cachedContents` 管理 API。
+
+## 验证实际命中
+
+| 协议 | 返回时可参考的用量字段 |
+| --- | --- |
+| Chat Completions | `usage.prompt_tokens_details.cached_tokens` |
+| Responses | `usage.input_tokens_details.cached_tokens` |
+| Messages | `usage.cache_read_input_tokens`、`usage.cache_creation_input_tokens` |
+
+字段缺失不能当作命中证据。对符合条件的重复请求做对比，并查看自己的用量记录。不要跨模型承诺相同的保留时长、前缀长度阈值或折扣。
+
+## 成本与使用边界
+
+- 缓存 token 可能已经包含在输入 token 总数中，估算时不要重复减除。
+- 缓存读、写和普通输入的价格可能不同，应以 Fenno 账单明细为准，不能照用其他服务商的价格示例。
+- 不要把缓存当成持久会话存储，也不要据此推断数据留存政策。
+- 模型拒绝缓存字段时，应删除该字段或选择已验证的模型，不要改填无关的供应商专用参数。
+
+继续阅读[成本管理](/zh/api/guides/cost-management)和 [Messages](/zh/reference/anthropic/messages)。

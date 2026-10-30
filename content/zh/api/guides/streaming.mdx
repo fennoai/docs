@@ -1,0 +1,85 @@
+---
+title: "模型流式响应接入"
+description: "通过 Fenno API 实现 SSE 流式输出，区分 Chat Completions、Responses 与 Messages 的事件格式，正确处理空增量、结束状态、取消与中断。"
+---
+
+import { Callout } from 'nextra/components'
+
+# 流式响应
+
+流式输出让应用在回答尚未生成完时就收到增量内容。它改变的是读取方式，不会使模型获得原本不支持的能力。先选择支持目标协议和流式输出的模型。
+
+## 准备客户端
+
+在服务端 Python 环境安装 `openai`，按[快速开始](/zh/api/quickstart)设置 `FENNO_API_KEY` 和 `FENNO_MODEL`。不要把密钥交给浏览器。
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    timeout=60.0,
+    max_retries=0,
+)
+
+stream = client.chat.completions.create(
+    model=os.environ["FENNO_MODEL"],
+    messages=[{"role": "user", "content": "Explain streaming in three sentences."}],
+    stream=True,
+)
+try:
+    for chunk in stream:
+        if chunk.choices:
+            text = chunk.choices[0].delta.content
+            if text:
+                print(text, end="", flush=True)
+finally:
+    stream.close()
+```
+
+`choices` 为空或增量不带 `content`，不一定是出错。角色、工具参数和用量可能分别到达。工具参数要按调用索引累积，等调用内容完整后再解析 JSON。
+
+## Responses 使用类型化事件
+
+沿用上面的 `client`，并选择支持 Responses 的模型：
+
+```python
+stream = client.responses.create(
+    model=os.environ["FENNO_MODEL"],
+    input="Explain streaming in three sentences.",
+    stream=True,
+)
+try:
+    for event in stream:
+        if event.type == "response.output_text.delta":
+            print(event.delta, end="", flush=True)
+        elif event.type in {"response.failed", "response.incomplete", "error"}:
+            raise RuntimeError(str(event))
+finally:
+    stream.close()
+```
+
+不要用 `choices[0].delta` 解析 Responses。它的输出中还可能包含推理项和函数调用项，而不仅是文本。
+
+## 不同协议如何判断结束
+
+| 协议 | 文本增量 | 完成与错误处理 |
+| --- | --- | --- |
+| Chat Completions | `choices[].delta.content` | 检查 `finish_reason`；SSE 以 `[DONE]` 结束 |
+| Responses | `response.output_text.delta` | 检查 `response.completed`、`response.incomplete`、`response.failed` 与 `error` |
+| Anthropic Messages | `content_block_delta` 中的 `text_delta` | 检查 `message_delta.stop_reason`、`message_stop` 与错误事件 |
+| Gemini | candidate 中的内容 part | 检查 `finishReason` 和安全反馈；REST SSE 使用 `alt=sse` |
+
+SSE 事件通过空行分隔。一次网络读取不保证正好读到一个事件，甚至不保证包含完整 UTF-8 字符。使用 SDK 或增量 SSE 解析器，不要把每个网络分片直接当作 JSON。
+
+## 流中断时如何处理
+
+- 用户取消时关闭连接，同时设置请求超时与应用总时限。
+- HTTP 状态成功，不代表流后续一定正常完成。
+- 已经展示内容后发生中断，应标记为部分结果，不要把重新生成的回答悄悄拼到末尾。
+- 重试可能产生第二次计费请求；已经执行的工具操作不能随重试自动重放。
+- 自己转发 SSE 时，检查代理缓冲与空闲超时；日志不要记录密钥或完整客户提示词。
+
+继续阅读[错误与重试](/zh/api/errors)、[工具调用](/zh/api/guides/tool-calling)和各协议的 [API 参考](/zh/reference)。

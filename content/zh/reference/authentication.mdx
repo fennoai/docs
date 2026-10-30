@@ -1,0 +1,43 @@
+---
+title: "模型 API 鉴权 Header 参考"
+description: "查询 Fenno 各模型协议使用的 Bearer、x-api-key 与 x-goog-api-key 请求头，核对版本 Header、SDK 地址和环境变量，避免凭据冲突与泄露。"
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# 鉴权 Header
+
+在 [Fenno 控制台](https://api.fenno.ai)创建 Key，并只在服务端保存。拥有 Key 不意味着能访问全部模型或无限使用。操作步骤见[鉴权指南](/zh/api/authentication)。
+
+| 协议 | 认证 Header | JSON 请求的其他 Header |
+| --- | --- | --- |
+| OpenAI 兼容 | `Authorization: Bearer <FENNO_API_KEY>` | `Content-Type: application/json` |
+| Anthropic Messages | `x-api-key: <FENNO_API_KEY>` | `anthropic-version: 2023-06-01`、`Content-Type: application/json` |
+| Gemini | `x-goog-api-key: <FENNO_API_KEY>` | `Content-Type: application/json` |
+
+Anthropic SDK 会添加常规版本 Header，同一次请求不要配置相互冲突的 `api_key` 和 `auth_token`。Gemini 在接口接受时也可使用 `key` 查询参数，但 Header 能减少密钥出现在 URL 和访问日志中的风险。
+
+## 环境变量约定
+
+本指南使用应用自己管理的 `FENNO_API_KEY`，并明确传给 SDK。并不是所有 SDK 都会自动读取这个变量：
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+)
+```
+
+工具专用变量见对应[接入指南](/zh/api/integrations)。环境变更后按需重启应用；在 shell 中导出的变量，不一定会传给此前已启动的图形界面应用。
+
+## 认证失败处理
+
+- `401`：检查实际使用的值、Key 是否已删除或禁用，以及客户端认证冲突。
+- `403`：检查模型权限与策略，不要反复替换本来有效的密钥。
+- 截图、日志和报障信息都要脱敏，不要把密钥提交进仓库或前端产物。
+- 泄露后使用账户支持的控制方式轮换密钥，再更新依赖服务。
+
+继续阅读[错误参考](/zh/reference/errors)与[基础地址总览](/zh/reference)。

@@ -1,0 +1,73 @@
+---
+title: "LlamaIndex with Fenno API"
+description: "Configure LlamaIndex OpenAILike and OpenAILikeEmbedding with Fenno endpoints, set explicit context and capability metadata, and build a minimal RAG example without default-provider calls."
+---
+
+import { Callout } from 'nextra/components'
+
+# LlamaIndex
+
+LlamaIndex can route generation and embeddings through separate compatible adapters. Configure both; changing only the language model can leave embeddings pointing at a default provider.
+
+## 1. Install adapters
+
+```bash
+python -m pip install -U llama-index-core llama-index-llms-openai-like llama-index-embeddings-openai-like
+```
+
+Set `FENNO_API_KEY`, `FENNO_MODEL`, and `FENNO_CONTEXT_WINDOW` to the chosen chat model's verified context size as an integer. Set `FENNO_EMBEDDING_MODEL` separately if using retrieval. Pin validated package versions for deployment.
+
+## 2. Verify the language model
+
+```python
+import os
+from llama_index.llms.openai_like import OpenAILike
+
+llm = OpenAILike(
+    model=os.environ["FENNO_MODEL"],
+    api_base="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    context_window=int(os.environ["FENNO_CONTEXT_WINDOW"]),
+    is_chat_model=True,
+    is_function_calling_model=False,
+    max_retries=0,
+    timeout=60,
+)
+print(llm.complete("Reply with OK only."))
+```
+
+`api_base` is LlamaIndex's option name, unlike `base_url` in the OpenAI Python client. `is_chat_model=True` selects chat behavior. The example disables function calling because a simple text request does not require it; only enable it after verifying model support.
+
+## 3. Configure embeddings before indexing
+
+Continue in the same Python process with an available embedding model:
+
+```python
+from llama_index.core import Document, Settings, VectorStoreIndex
+from llama_index.embeddings.openai_like import OpenAILikeEmbedding
+
+Settings.llm = llm
+Settings.embed_model = OpenAILikeEmbedding(
+    model_name=os.environ["FENNO_EMBEDDING_MODEL"],
+    api_base="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    max_retries=0,
+)
+documents = [Document(text="Our support team works Monday to Friday, 09:00 to 18:00.")]
+index = VectorStoreIndex.from_documents(documents)
+answer = index.as_query_engine().query("When is the support team available?")
+print(answer)
+```
+
+This synthetic document is an example, not Fenno's support schedule. Index construction sends document text to the embedding endpoint; querying sends query text for embedding and retrieved context to the chat endpoint.
+
+## Production boundaries
+
+- Never mix vectors from different models or dimensions in the same index.
+- Scope retrieval to the current user's document permissions before building the model context.
+- `Settings` is process-wide configuration. For multi-tenant or concurrent applications with different providers, prefer explicit per-component clients instead of mutating global settings per request.
+- The framework does not provide a hosted Fenno knowledge base, vector database or guaranteed factual answers.
+- A custom model ID can require explicit metadata; do not pass it to a provider-specific adapter that assumes a fixed official model catalogue.
+- Keep tool permissions, callback/tracing data handling and retries under application control.
+
+See the [official OpenAILike reference](https://developers.llamaindex.ai/python/framework-api-reference/llms/openai_like/), [OpenAILikeEmbedding reference](https://developers.llamaindex.ai/python/framework-api-reference/embeddings/openai_like/), and [retrieval guide](/en/api/guides/embeddings).

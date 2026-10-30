@@ -1,0 +1,63 @@
+---
+title: "Images 生成与编辑端点参考"
+description: "查询 Fenno 图像生成和 multipart 编辑端点，核对模型专用尺寸、质量及文件参数，分别处理 URL、base64 输出和图片请求错误。"
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# Images API
+
+| 操作 | 方法与路径 | 内容类型 |
+| --- | --- | --- |
+| 生成 | `POST /v1/images/generations` | JSON |
+| 编辑 | `POST /v1/images/edits` | multipart 表单 |
+
+两者均使用 `https://api.fenno.ai` 主机和 Bearer 鉴权。所选图像模型必须支持对应操作。
+
+## 生成参数
+
+`model` 和 `prompt` 确定模型与任务；`size`、`quality`、`n`、输出格式及其他选项依模型而定。不要未经核实就套用其他图像模型的参数值。
+
+安装 `openai`，设置 `FENNO_API_KEY` 和 `FENNO_IMAGE_MODEL`：
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    timeout=60.0,
+    max_retries=0,
+)
+
+generated = client.images.generate(
+    model=os.environ["FENNO_IMAGE_MODEL"],
+    prompt="A lighthouse on a rocky coast, watercolor, no text.",
+)
+print("Returned images:", len(generated.data))
+```
+
+## 编辑参数
+
+发送受支持的 `image` 文件、`model` 和 `prompt`。只有所选模型支持时才能使用 `mask` 等编辑选项；蒙版尺寸、透明度语义和文件限制可能不同。
+
+```python
+with open("input.png", "rb") as image:
+    edited = client.images.edit(
+        model=os.environ["FENNO_IMAGE_MODEL"],
+        image=image,
+        prompt="Keep the subject and replace the background with a beach.",
+    )
+print("Returned images:", len(edited.data))
+```
+
+multipart 上传不能手动添加 JSON 内容类型，应让 HTTP 客户端生成表单边界。
+
+## 响应与错误
+
+`data[]` 根据模型和受支持格式返回 `url` 或 `b64_json`。usage、修订后的提示词等字段并不是所有模型都有。缺少 URL 时应先检查 base64 结果，不要直接认定失败。
+
+遇到 `400` 时检查图片格式、请求大小、尺寸、提示词与可选参数；`404` 也可能表示路径错误或模型不可用。反复重试不能让不支持编辑的模型获得编辑能力。
+
+结果处理见[图像生成与编辑指南](/zh/api/guides/image-generation)，错误结构见[错误参考](/zh/reference/errors)。
