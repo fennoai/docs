@@ -1,0 +1,61 @@
+---
+title: "LangChain with Fenno API"
+description: "Use langchain-openai ChatOpenAI with Fenno's custom base_url and explicit credentials, verify invoke and streaming, and keep framework tools, embeddings and tracing separately configured."
+---
+
+import { Callout } from 'nextra/components'
+
+# LangChain
+
+Use the `langchain-openai` integration for standard OpenAI-compatible chat calls. LangChain's provider adapter does not guarantee preservation of nonstandard upstream response fields.
+
+## 1. Install the integration
+
+```bash
+python -m pip install -U langchain-openai
+```
+
+Set `FENNO_API_KEY` and an available Chat Completions `FENNO_MODEL`. For production, pin the package version you validate rather than upgrading implicitly on each deployment.
+
+## 2. Make a minimal request
+
+```python
+import os
+from langchain_openai import ChatOpenAI
+
+llm = ChatOpenAI(
+    model=os.environ["FENNO_MODEL"],
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    timeout=60,
+    max_retries=0,
+)
+response = llm.invoke("Reply with OK only.")
+print(response.content)
+```
+
+Passing both `base_url` and `api_key` explicitly avoids accidentally sending the request to the default OpenAI service or reading another provider's key.
+
+## 3. Stream text
+
+Using the same `llm`:
+
+```python
+for chunk in llm.stream("Explain what an API gateway does."):
+    if isinstance(chunk.content, str):
+        print(chunk.content, end="", flush=True)
+```
+
+Some message content can be structured blocks rather than a string. Applications using tools should handle tool-call data as well, not only render text.
+
+## Tools, retrieval and other features
+
+- `bind_tools` prepares tool definitions; your application or agent executor still controls tool execution and permissions.
+- `with_structured_output` can select different mechanisms depending on method and version. Choose a mechanism your model supports and verify its request fields.
+- An embedding model is a separate configuration. When adding an embedding adapter, explicitly set its model, Fenno endpoint and credentials too.
+- Chat Completions compatibility does not promise all Responses features or nonstandard reasoning fields are preserved.
+- Tracing is separate from model routing. Review any enabled tracing or callbacks before sending private prompts to an external observability service.
+
+Compare Fenno usage against a minimal direct SDK request when debugging. Check the adapter's actual endpoint and retry settings before adding another application retry loop.
+
+See the [official ChatOpenAI guide](https://docs.langchain.com/oss/python/integrations/chat/openai), [tool calling](/en/api/guides/tool-calling), and [embeddings](/en/api/guides/embeddings).

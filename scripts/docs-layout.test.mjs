@@ -17,12 +17,13 @@ function sidebar(html) {
 }
 
 for (const locale of ['en', 'zh']) {
-  test(`${locale}: native header owns both product tabs, without Console`, async () => {
+  test(`${locale}: native header owns all three documentation sections, without Console`, async () => {
     const html = await readPage(`${locale}/api`)
     const header = html.match(/<header\b[^>]*>[\s\S]*?<\/header>/)?.[0]
     assert.ok(header)
     assert.ok(header.includes(`href="/${locale}/api/"`))
     assert.ok(header.includes(`href="/${locale}/ai/"`))
+    assert.ok(header.includes(`href="/${locale}/reference/"`))
     assert.ok(header.includes('fenno-header'))
     assert.ok(!header.includes('href="https://api.fenno.ai'))
     assert.ok(!html.includes('fenno-tabs'))
@@ -49,8 +50,19 @@ for (const locale of ['en', 'zh']) {
     assert.ok(faq.includes('x:cursor-pointer'))
   })
 
-  for (const route of ['api', 'api/quickstart', 'ai', 'ai/commands']) {
-    test(`${locale}/${route}: sidebar is scoped to the current product`, async () => {
+  for (const route of [
+    'api',
+    'api/quickstart',
+    'api/guides/streaming',
+    'api/integrations/zed',
+    'ai',
+    'ai/commands',
+    'reference',
+    'reference/openai/chat-completions',
+    'reference/anthropic/messages',
+    'reference/gemini/generate-content'
+  ]) {
+    test(`${locale}/${route}: sidebar is scoped to the current documentation section`, async () => {
       const html = await readPage(`${locale}/${route}`)
       const markup = sidebar(html)
       assert.doesNotMatch(markup, /\bx:hidden\b/)
@@ -65,7 +77,8 @@ for (const locale of ['en', 'zh']) {
     ['api/integrations', 4],
     ['api', 4],
     ['api/models', 3],
-    ['ai', 4]
+    ['ai', 4],
+    ['reference', 4]
   ]) {
     test(`${locale}/${route}: text cards and Markdown tables use shared styles`, async () => {
       const html = await readPage(`${locale}/${route}`.replace(/\/$/, ''))
@@ -85,6 +98,44 @@ for (const locale of ['en', 'zh']) {
     })
   }
 }
+
+test('integrations precede capability workflows in both guide sidebars', async () => {
+  for (const locale of ['en', 'zh']) {
+    const markup = sidebar(await readPage(`${locale}/api`))
+    const integrations = markup.indexOf(`href="/${locale}/api/integrations`)
+    const workflows = markup.indexOf(`href="/${locale}/api/guides`)
+    assert.ok(integrations >= 0 && workflows > integrations)
+  }
+})
+
+test('viewport-wide shell keeps a separate bounded article width', async () => {
+  const css = await readFile(new URL('app/globals.css', root), 'utf8')
+  assert.match(css, /--nextra-content-width:\s*100%/)
+  assert.match(css, /--fenno-article-width:\s*61rem/)
+  assert.match(css, /max-inline-size:\s*var\(--fenno-article-width\)/)
+  assert.match(css, /\.fenno-docs article\s*\{[^}]*margin-inline:\s*auto/s)
+  assert.match(
+    css,
+    /\.nextra-sidebar:has\(\.nextra-sidebar-footer button\[aria-expanded='true'\]\)/
+  )
+  assert.match(css, /inline-size:\s*100%\s*!important/)
+})
+
+test('legacy protocol pages and temporary reference URLs redirect without being indexed', async () => {
+  const sitemap = await readFile(new URL('out/sitemap.xml', root), 'utf8')
+  for (const locale of ['en', 'zh']) {
+    for (const protocol of ['openai', 'anthropic', 'gemini']) {
+      const html = await readPage(`${locale}/api/${protocol}`)
+      assert.ok(html.includes(`NEXT_REDIRECT;replace;/${locale}/reference/${protocol}/;308;`))
+      assert.ok(!sitemap.includes(`<loc>https://docs.fenno.ai/${locale}/api/${protocol}/</loc>`))
+    }
+    for (const suffix of ['', '/openai/chat-completions', '/anthropic/messages']) {
+      const html = await readPage(`${locale}/api-reference${suffix}`)
+      assert.ok(html.includes(`NEXT_REDIRECT;replace;/${locale}/reference${suffix}/;308;`))
+      assert.ok(!sitemap.includes(`/${locale}/api-reference`))
+    }
+  }
+})
 
 test('header offset remains valid for Nextra IntersectionObserver', async () => {
   const css = await readFile(new URL('app/globals.css', root), 'utf8')

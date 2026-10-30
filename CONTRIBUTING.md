@@ -12,12 +12,17 @@ pnpm dev
 ```
 
 The root and `/en/` open `/en/api/`; `/zh/` opens `/zh/api/`. There is no separate
-portal page. The product tabs use Nextra `_meta.ts` entries with `type: 'page'`.
+portal page. The three documentation tabs use Nextra `_meta.ts` entries with
+`type: 'page'`: Model Guide, Agent Guide and Model API Reference. Their route
+roots are `api`, `ai` and `reference`. Keep these roots independent: Nextra 4
+matches documentation trees by prefix, so `api-reference` overlaps `api`.
 
 ## Content and components
 
-- Put model-service documentation under `content/{en,zh}/api` and Agent
-  documentation under `content/{en,zh}/ai`.
+- Put task-based model guides under `content/{en,zh}/api`, endpoint references
+  under `content/{en,zh}/reference`, and Agent documentation under
+  `content/{en,zh}/ai`. Keep integrations above capability workflows in the model
+  guide navigation.
 - Use **Fenno API (Models)** / **FennoAI (Agent)** in English, and
   **Fenno API（模型）** / **FennoAI（Agent）** in Chinese. Fenno remains the company brand.
 - Use Nextra's `Cards` grid with the shared `LinkCard` for title/description links.
@@ -30,6 +35,15 @@ portal page. The product tabs use Nextra `_meta.ts` entries with `type: 'page'`.
   scrollbars or disable scroll chaining; test long pages and menus.
 - Adapt reference material to Fenno's actual URLs and capabilities. Do not copy
   another provider's model prefixes, credentials, screenshots or compatibility promises.
+- Keep research scripts and source snapshots in the Git-ignored `reference/`
+  directory. Published integration marks live in `public/integrations/`, with
+  their source URLs and licenses; do not add third-party runtime hotlinks.
+- Keep model examples capability-specific. Chat Completions uses
+  `response_format`, while Responses uses `text.format`; discovery does not
+  establish support for every feature. API-key examples are not executed by CI.
+- Keep the documentation shell viewport-wide and bound the article separately.
+  Preserve Nextra's sidebar, TOC and mobile behavior rather than positioning
+  sidebars over the reading column.
 
 ## Search metadata
 

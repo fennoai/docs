@@ -1,0 +1,85 @@
+---
+title: "Streaming model responses"
+description: "Implement SSE streaming through Fenno API, distinguish Chat Completions, Responses and Messages events, and handle empty chunks, completion and interrupted output safely."
+---
+
+import { Callout } from 'nextra/components'
+
+# Streaming responses
+
+Streaming delivers output incrementally instead of waiting for the entire answer. It changes how you read the response, not which capabilities a model supports. Start with a model that supports the selected protocol and streaming.
+
+## Prepare the client
+
+Install `openai` in your server-side Python environment and set `FENNO_API_KEY` and `FENNO_MODEL` as described in the [quickstart](/en/api/quickstart). Do not expose the key to a browser.
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    timeout=60.0,
+    max_retries=0,
+)
+
+stream = client.chat.completions.create(
+    model=os.environ["FENNO_MODEL"],
+    messages=[{"role": "user", "content": "Explain streaming in three sentences."}],
+    stream=True,
+)
+try:
+    for chunk in stream:
+        if chunk.choices:
+            text = chunk.choices[0].delta.content
+            if text:
+                print(text, end="", flush=True)
+finally:
+    stream.close()
+```
+
+An empty `choices` array or a delta without `content` is not necessarily an error. Role changes, tool arguments and usage can arrive separately. Accumulate tool arguments by call index and parse JSON only after the call is complete.
+
+## Responses uses typed events
+
+Run this with the same `client` and a Responses-capable model:
+
+```python
+stream = client.responses.create(
+    model=os.environ["FENNO_MODEL"],
+    input="Explain streaming in three sentences.",
+    stream=True,
+)
+try:
+    for event in stream:
+        if event.type == "response.output_text.delta":
+            print(event.delta, end="", flush=True)
+        elif event.type in {"response.failed", "response.incomplete", "error"}:
+            raise RuntimeError(str(event))
+finally:
+    stream.close()
+```
+
+Do not parse Responses as `choices[0].delta`. Its output can include reasoning and function-call items in addition to text.
+
+## Protocol completion signals
+
+| Protocol | Text increment | Completion and error handling |
+| --- | --- | --- |
+| Chat Completions | `choices[].delta.content` | Inspect `finish_reason`; the SSE stream ends with `[DONE]` |
+| Responses | `response.output_text.delta` | Inspect `response.completed`, `response.incomplete`, `response.failed` and `error` |
+| Anthropic Messages | `content_block_delta` with `text_delta` | Inspect `message_delta.stop_reason`, `message_stop` and error events |
+| Gemini | Candidate content parts | Inspect candidate `finishReason` and safety feedback; REST SSE uses `alt=sse` |
+
+SSE events are separated by blank lines. Network reads do not align with events or UTF-8 characters. Use an SDK or an incremental SSE parser instead of splitting each network read into JSON.
+
+## Interrupted streams
+
+- Close the stream when the caller cancels. Set both a request timeout and an application deadline.
+- A successful HTTP status does not guarantee the stream later completes successfully.
+- Once output has been delivered, mark an interrupted answer as partial. Do not silently append a newly generated answer to it.
+- Retrying may create a second billable generation. Never replay an executed tool as part of an automatic retry.
+- When forwarding SSE, check your own proxy's buffering and idle-timeout settings; do not log credentials or full customer prompts.
+
+See [errors and retries](/en/api/errors), [tool calling](/en/api/guides/tool-calling), and the protocol-specific [API reference](/en/reference).

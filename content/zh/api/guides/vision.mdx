@@ -1,0 +1,67 @@
+---
+title: "图片与文档理解"
+description: "向支持视觉的 Fenno 模型发送 base64 或 URL 图片，区分各协议的内容块格式，核对图片、PDF、文件大小和数据安全限制。"
+---
+
+import { Callout } from 'nextra/components'
+
+# 图片与文档理解
+
+支持文本不等于支持视觉。先选择具有图片输入能力的模型；PDF、图片数量、分辨率和文件大小又是分别需要确认的能力与限制。
+
+## 分析本地图片
+
+安装 `openai`，设置 `FENNO_API_KEY` 和支持视觉的 `FENNO_MODEL`，在脚本旁准备一张名为 `input.png` 的 PNG 图片：
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    timeout=60.0,
+    max_retries=0,
+)
+import base64
+from pathlib import Path
+
+encoded = base64.b64encode(Path("input.png").read_bytes()).decode("ascii")
+response = client.chat.completions.create(
+    model=os.environ["FENNO_MODEL"],
+    messages=[{"role": "user", "content": [
+        {"type": "text", "text": "Describe the image and note uncertain details."},
+        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{encoded}"}},
+    ]}],
+)
+print(response.choices[0].message.content)
+```
+
+JPEG 等其他格式应使用对应 MIME 类型。base64 会增加请求体大小，发送前应按任务所需细节合理缩放图片。
+
+## 通过 URL 传入
+
+图片可被模型服务访问时，可以把 `image_url.url` 中的 data URL 换成 HTTPS 图片地址。浏览器登录后能打开，不代表模型服务能访问。避免内网地址、过早过期的链接，以及带密钥的 URL。
+
+应用接收外部 URL 时也要进行校验，不要直接信任任意远程地址。发送敏感材料前，应先确认数据处理要求。
+
+## 各协议的图片格式
+
+| 协议 | 图片表示 | 需要注意 |
+| --- | --- | --- |
+| Chat Completions | `image_url` 内容项 | 只有字符串的 `content` 不能承载图片 |
+| Responses | `input_image`，通过 `image_url` 传入 | 同一消息中的文本类型是 `input_text`，不是 Chat 的 `text` |
+| Anthropic Messages | `image` 内容块与受支持的 `source` | base64 来源包含 `media_type` 与 `data` |
+| Gemini | `inlineData` part，包含 `mimeType` 和 `data` | REST 字段与 SDK 的便捷封装可能不同 |
+
+支持图片不自动意味着支持 PDF。确认模型能力后再使用对应的文档输入格式；把 PDF 上传到无关的文件存储端点，并不能替代模型的文档输入支持。
+
+## 验证效果与限制
+
+- 先用一张小的非敏感测试图片，再增加图片或文档页数。
+- 要求模型标注不确定文本，而不是猜测；重要 OCR 字段应回到原图核验。
+- 低清文字、旋转截图和密集表格可能得到看似合理但错误的结果。
+- 请求失败时先检查 MIME、真实文件内容、大小、模型与协议，再决定是否重试。
+- 图片和文档处理可能产生额外 token 消耗，见[成本管理](/zh/api/guides/cost-management)。
+
+继续阅读[模型与能力](/zh/api/models)、[Messages](/zh/reference/anthropic/messages)和 [Gemini 内容生成](/zh/reference/gemini/generate-content)。

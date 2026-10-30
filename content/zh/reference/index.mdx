@@ -1,0 +1,47 @@
+---
+title: "Fenno 模型 API 参考"
+description: "按端点查询 Fenno 的 OpenAI 兼容、Anthropic Messages 与 Gemini 接口，了解鉴权、请求参数、返回结构和流式事件，并与任务教程分开阅读。"
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# 模型 API 参考
+
+本栏介绍模型服务的请求与响应。首次接入和完整任务教程见[模型用户指南](/zh/api)；GitHub 编码 Agent 的使用方式见 [Agent 用户指南](/zh/ai)。
+
+<Cards num={2}>
+  <LinkCard title="OpenAI 兼容" href="/zh/reference/openai">
+    Chat Completions、Responses、向量化、图像与模型查询。
+  </LinkCard>
+  <LinkCard title="Anthropic Messages" href="/zh/reference/anthropic">
+    Messages、内容块、工具结果与输入 token 计数。
+  </LinkCard>
+  <LinkCard title="Gemini" href="/zh/reference/gemini">
+    Generate Content、流式输出与模型资源查询。
+  </LinkCard>
+  <LinkCard title="鉴权与错误" href="/zh/reference/authentication">
+    各协议的请求 Header、密钥处理与错误排查。
+  </LinkCard>
+</Cards>
+
+## 基础地址
+
+| 客户端 | Base URL | 最终路径示例 |
+| --- | --- | --- |
+| OpenAI SDK | `https://api.fenno.ai/v1` | `/v1/chat/completions` |
+| Anthropic SDK | `https://api.fenno.ai` | `/v1/messages` |
+| Google GenAI SDK | `https://api.fenno.ai` | `/v1beta/models/{model}:generateContent` |
+
+支持某种协议，不代表所有模型都支持上游的全部功能。先使用账户实际可用的精确模型 ID，再验证输入类型、工具能力与可选参数。示例使用环境变量，不维护永久有效的静态模型清单。
+
+本栏没有承诺支持未明确列出的上游托管存储、批处理、内置工具、文件管理或 Agent API。注明简化的响应仅用于解释结构，模型特有字段可能不同。
+
+## 通用约定
+
+- 按[鉴权参考](/zh/reference/authentication)发送认证 Header。
+- JSON 请求使用 `Content-Type: application/json`；图片编辑使用 multipart 表单。
+- 通过状态码和结构化字段处理错误，不依赖错误消息的固定措辞。
+- 除端点另有要求外，请求 ID、usage 与限流 Header 都应兼容缺失。
+- 示例需要自备密钥，并产生正常用量；文档构建不会实际执行这些 API 请求。
+
+继续阅读[错误格式](/zh/reference/errors)、[流式教程](/zh/api/guides/streaming)与[模型能力](/zh/api/models)。

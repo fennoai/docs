@@ -7,12 +7,11 @@ import { Callout, Cards } from 'nextra/components'
 
 # 模型与能力
 
-Fenno 以统一协议层收敛不同厂商的模型差异，你只需要关心“用哪个模型、要什么能力”，
-不需要为每个厂商单独处理鉴权、错误码和流式格式。
+Fenno 通过通用 API 协议减少重复接入工作，但各协议仍有自己的鉴权 Header、请求字段和流式事件，应按实际使用的端点查阅对应参考。
 
 <Callout type="info">
   具体可用的模型清单以控制台展示为准，并会随上游开放情况调整。本页只说明能力维度与
-  调用方式，不维护静态模型列表。
+  调用方式，不维护静态模型列表。下列每项能力都需要所选模型和路由支持，不代表所有模型通用。
 </Callout>
 
 ## 能力矩阵
@@ -22,10 +21,10 @@ Fenno 以统一协议层收敛不同厂商的模型差异，你只需要关心�
 | 文本生成 | 对话、补全、长文写作、代码生成 | `/v1/chat/completions`、`/v1/responses`、`/v1/messages` |
 | 多模态输入 | 图片、PDF 等作为输入内容 | 同上（消息内容改为数组结构） |
 | 工具调用 | Function Calling / Tool Use，可并行或多轮 | 同上（`tools` 字段） |
-| 结构化输出 | JSON Mode / JSON Schema 约束（仅 OpenAI 兼容请求） | `/v1/chat/completions`、`/v1/responses`（`response_format`） |
-| 推理模式 | 长思考、逐步推理，按 token 计费 | 同上（模型或 `reasoning` 参数） |
+| 结构化输出 | 仅支持的 OpenAI 兼容模型与请求 | Chat 使用 `response_format`；Responses 使用 `text.format` |
+| 推理模式 | 能力与预算依模型而定 | Chat、Responses、Messages 的推理字段不同，按端点查询 |
 | 提示缓存 | 复用长前缀，降低重复上下文成本 | 同上（自动或显式缓存标记） |
-| 流式响应 | SSE 增量返回，首 token 更快 | 同上（`stream: true`） |
+| 流式响应 | 增量返回，便于实时展示 | 同上（`stream: true`） |
 | 图像生成 | 文生图、图像编辑 | `/v1/images/generations`、`/v1/images/edits` |
 | 向量化 | Embeddings | `/v1/embeddings` |
 
@@ -40,19 +39,19 @@ Fenno 以统一协议层收敛不同厂商的模型差异，你只需要关心�
 ## 协议选择建议
 
 <Cards num={2}>
-  <LinkCard title="已有 OpenAI 集成" href="/zh/api/openai">
+  <LinkCard title="已有 OpenAI 集成" href="/zh/reference/openai">
     只改 base_url 与 api_key，其余请求体与响应体保持 OpenAI 形态。
   </LinkCard>
-  <LinkCard title="Claude Code / Anthropic SDK" href="/zh/api/anthropic">
+  <LinkCard title="Claude Code / Anthropic SDK" href="/zh/reference/anthropic">
     使用 /v1/messages，保留 Messages API 的 content block 结构。
   </LinkCard>
-  <LinkCard title="Gemini SDK / Gemini CLI" href="/zh/api/gemini">
+  <LinkCard title="Gemini SDK / Gemini CLI" href="/zh/reference/gemini">
     使用 /v1beta/models/*，保留 generateContent 与流式接口。
   </LinkCard>
 </Cards>
 
-## 计费口径
+## 计费与能力确认
 
-- 输入、输出、缓存读写分别计费，价格以控制台展示为准。
-- 图像按张计费，向量按输入 token 计费。
-- 失败请求（未产生上游 token）不计费，具体以账单明细为准。
+以控制台和实际账单中当前模型的计费定义为准，不要仅凭 HTTP 失败或 usage 缺失就认定没有费用。参阅[用量与成本管理](/zh/api/guides/cost-management)。
+
+模型出现在列表中不代表全部端点、图片、工具或缓存能力都可用，应按业务逐项验证。[模型查询](/zh/reference/openai/models)只负责发现 ID，不是完整能力探测。

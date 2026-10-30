@@ -11,7 +11,8 @@
 }
 
 html:root {
-  --nextra-content-width: 90rem;
+  --nextra-content-width: 100%;
+  --fenno-article-width: 61rem;
   /* Nextra also passes this value to IntersectionObserver.rootMargin. */
   --nextra-navbar-height: 112px;
 }
@@ -107,7 +108,11 @@ html:root {
   width: 100%;
 }
 
+/* Sidebars use the viewport; the reading measure stays independent. */
 .fenno-docs article {
+  flex: 1 1 0%;
+  max-inline-size: var(--fenno-article-width);
+  margin-inline: auto;
   padding: 2rem 2.5rem 3rem;
   color: var(--fenno-text);
 }
@@ -132,13 +137,50 @@ html:root {
   padding-top: 2rem;
 }
 
+/* Nextra's horizontal Collapse can cache zero width while hidden on mobile. */
+.fenno-docs
+  .nextra-sidebar:has(.nextra-sidebar-footer button[aria-expanded='true'])
+  > .nextra-scrollbar
+  > div,
+.fenno-docs
+  .nextra-sidebar:has(.nextra-sidebar-footer button[aria-expanded='true'])
+  > .nextra-scrollbar
+  > div
+  > :first-child {
+  inline-size: 100% !important;
+}
+
 .fenno-docs :is(.nextra-sidebar, .nextra-mobile-nav) li.active > :is(a, button) {
   font-weight: 400;
 }
 
 .fenno-docs .nextra-toc {
-  width: 13rem;
+  width: 16rem;
   font-size: 0.8125rem;
+}
+
+.fenno-integration-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.fenno-integration-icon {
+  display: inline-block;
+  width: 1rem;
+  height: 1rem;
+  flex: none;
+  vertical-align: -0.125em;
+  background-color: currentColor;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
+}
+
+.fenno-integration-image {
+  background: none;
+  object-fit: contain;
 }
 
 /* Keep the official responsive Cards grid; text links use title-first markup. */

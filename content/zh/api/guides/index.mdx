@@ -1,0 +1,28 @@
+---
+title: "模型能力教程与生产实践"
+description: "按业务需求选择 Fenno 流式、工具调用、结构化输出、视觉、向量检索或图像生成教程，再补充缓存、成本控制、并发和错误处理等生产实践。"
+---
+
+# 模型使用指南
+
+先完成[第一个请求](/zh/api/quickstart)，再选择业务需要的能力。模型 ID 可用，不代表下面所有能力都支持，应同时确认模型与协议。
+
+## 完成具体任务
+
+| 目标 | 指南 | 将实现什么 |
+| --- | --- | --- |
+| 边生成边展示回答 | [流式响应](/zh/api/guides/streaming) | 增量输出、完成状态与取消 |
+| 让应用执行操作 | [函数调用](/zh/api/guides/tool-calling) | 工具定义、校验、执行与结果回传 |
+| 提取机器可读记录 | [结构化输出](/zh/api/guides/structured-output) | JSON 模式、schema 与结果验证 |
+| 分析图片或文档 | [视觉理解](/zh/api/guides/vision) | 正确的内容块和输入检查 |
+| 检索自己的内容 | [向量化](/zh/api/guides/embeddings) | 生成向量并保持检索流程一致 |
+| 创建或修改图片 | [图像生成](/zh/api/guides/image-generation) | 生成、multipart 改图与结果处理 |
+
+## 补齐生产接入
+
+- [提示缓存](/zh/api/guides/prompt-caching)：组织可复用上下文并检查实际用量。
+- [用量与成本](/zh/api/guides/cost-management)：核算所有模型轮次并限制支出。
+- [限流与并发](/zh/api/guides/rate-limits)：发送请求前先限制工作量。
+- [错误、超时与重试](/zh/api/errors)：区分无效请求与可安全重放的失败。
+
+精确字段名与返回格式见独立的[模型 API 参考](/zh/reference)。只想配置现成应用、不准备编写 API 客户端时，可直接阅读[工具接入](/zh/api/integrations)。

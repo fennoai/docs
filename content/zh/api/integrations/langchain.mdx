@@ -1,0 +1,61 @@
+---
+title: "LangChain 接入 Fenno API"
+description: "通过 langchain-openai ChatOpenAI 的自定义 base_url 和明确密钥接入 Fenno，验证 invoke 与流式，并分别配置工具、向量模型和追踪服务。"
+---
+
+import { Callout } from 'nextra/components'
+
+# LangChain
+
+使用 `langchain-openai` 集成调用标准 OpenAI 兼容聊天接口。框架适配器不保证保留上游所有非标准响应字段。
+
+## 1. 安装集成包
+
+```bash
+python -m pip install -U langchain-openai
+```
+
+设置 `FENNO_API_KEY` 和可用的 Chat Completions `FENNO_MODEL`。生产环境应锁定已验证的包版本，不要每次部署都隐式升级。
+
+## 2. 发送最小请求
+
+```python
+import os
+from langchain_openai import ChatOpenAI
+
+llm = ChatOpenAI(
+    model=os.environ["FENNO_MODEL"],
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    timeout=60,
+    max_retries=0,
+)
+response = llm.invoke("Reply with OK only.")
+print(response.content)
+```
+
+明确传入 `base_url` 和 `api_key`，避免意外访问默认 OpenAI 服务或读取其他提供方的密钥。
+
+## 3. 读取流式文本
+
+沿用同一个 `llm`：
+
+```python
+for chunk in llm.stream("Explain what an API gateway does."):
+    if isinstance(chunk.content, str):
+        print(chunk.content, end="", flush=True)
+```
+
+消息内容也可能是结构化内容块而非字符串。使用工具的应用还要处理工具调用数据，不能只显示文本。
+
+## 工具、检索与其他功能
+
+- `bind_tools` 负责准备工具定义，工具执行与权限仍由应用或 Agent 执行器控制。
+- `with_structured_output` 的实现会随 method 和版本变化，应选择模型支持的方式，并核对实际请求字段。
+- 向量模型是独立配置。增加 embedding 适配器时，也要明确其模型、Fenno 地址与密钥。
+- 兼容 Chat Completions，不等于保留全部 Responses 能力或非标准推理字段。
+- tracing 与模型路由是两回事。启用追踪或回调前，检查是否会将私有提示词发送到外部可观测服务。
+
+排错时对比直接 SDK 最小请求与框架请求，先检查适配器的实际端点和重试设置，再决定是否增加应用层重试。
+
+继续阅读[官方 ChatOpenAI 指南](https://docs.langchain.com/oss/python/integrations/chat/openai)、[工具调用](/zh/api/guides/tool-calling)和[向量化](/zh/api/guides/embeddings)。

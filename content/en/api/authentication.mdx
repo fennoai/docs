@@ -29,7 +29,8 @@ that matches the endpoint you call.
     ```
 
     <Callout type="info">
-      The Anthropic SDK accepts either `api_key` or `auth_token`, but never send both in one request.
+      These SDK examples use `api_key`, which sends `x-api-key`. For a tool using `auth_token`,
+      follow that tool's integration guide and avoid conflicting credential settings.
     </Callout>
   </Tabs.Tab>
   <Tabs.Tab>
@@ -44,11 +45,12 @@ that matches the endpoint you call.
 ## SDK setup
 
 ```python
+import os
 from anthropic import Anthropic
 
 client = Anthropic(
     base_url="https://api.fenno.ai",
-    api_key="<FENNO_API_KEY>",
+    api_key=os.environ["FENNO_API_KEY"],
 )
 ```
 
@@ -63,20 +65,22 @@ const ai = new GoogleGenAI({
 
 ## Keys and permissions
 
-- Create multiple keys per account to separate environments or business units.
-- Keys inherit account-level model access and quota; permission changes apply immediately.
-- If a key leaks, delete and recreate it — deletion is irreversible.
+- Use separate keys for environments or applications where your account allows it.
+- Access and limits follow the current account and key configuration. After a change, verify the actual request instead of assuming an immediate propagation time.
+- If a key leaks, revoke or rotate it through the available console controls and update dependent applications. Do not reuse the exposed value.
 
 ## Usage constraints
 
 <Callout type="warning">
-  Do not embed keys in browsers or mobile apps. For client-side access, proxy through your own
-  backend or issue short-lived credentials.
+  Do not embed Fenno keys in browsers or mobile apps. Authenticate users through your own
+  backend and forward authorized requests server-side. An application's own session credentials
+  are not Fenno API keys.
 </Callout>
 
 ## Usage and quota
 
-Requests are metered by model and debited in real time. In the console you can inspect per-key
-usage, remaining balance and limits, and rate-limit or failure records.
+Use the usage, balance and limit information available in your account. A response's `usage`
+can help application statistics, but its absence or an HTTP failure alone does not establish zero cost.
+See [usage and cost management](/en/api/guides/cost-management).
 
 When quota is exhausted, requests return `402` or `429`; see [Errors & retries](/en/api/errors).

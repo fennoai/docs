@@ -7,12 +7,12 @@ import { Callout, Cards } from 'nextra/components'
 
 # Fenno API
 
-Fenno API是一个统一的 AI 模型接入网关：用一个 API Key 接入 GPT、Claude、Gemini 等主流模型，兼容 OpenAI、Anthropic、Gemini 三套协议，已有工具和 SDK 通常只需要替换 `base_url` 与 `api_key`。
+Fenno API 通过 OpenAI 兼容、Anthropic Messages 与 Gemini 协议，为账户实际可用的模型提供统一入口。配置地址、凭据与精确模型 ID 后，再验证业务需要的模型能力。
 
 <div className="fenno-hero">
   <span className="fenno-hero-badge">Fenno API · 多协议兼容</span>
-  <div className="fenno-hero-title">一个 Key，接通<span className="fenno-gradient-text">全部主流模型</span></div>
-  <p className="fenno-hero-desc">面向编码工具与生产应用：同一份 Key 同时服务 Codex、Claude Code、Cursor、Cline、OpenCode 以及你自己的后端服务；用量、额度、账单统一收敛。</p>
+  <div className="fenno-hero-title">一个 Key，连接<span className="fenno-gradient-text">多种模型</span></div>
+  <p className="fenno-hero-desc">面向兼容的编码工具与后端应用。模型访问权限、具体能力和用量以所选模型及当前账户为准。</p>
 </div>
 
 <Cards num={2}>
@@ -25,7 +25,7 @@ Fenno API是一个统一的 AI 模型接入网关：用一个 API Key 接入 GPT
   <LinkCard title="模型与能力" href="/zh/api/models">
     推理、多模态输入、工具调用、结构化输出、提示缓存与图像生成。
   </LinkCard>
-  <LinkCard title="API 参考" href="/zh/api/openai">
+  <LinkCard title="API 参考" href="/zh/reference">
     对话补全、Responses、Embeddings、图像生成等端点说明。
   </LinkCard>
 </Cards>
@@ -57,3 +57,13 @@ Fenno API是一个统一的 AI 模型接入网关：用一个 API Key 接入 GPT
 - 第一次接入：从[快速开始](/zh/api/quickstart)开始。
 - 已经有 Key：直接看[鉴权方式](/zh/api/authentication)。
 - 排查问题：[错误与重试](/zh/api/errors)。
+
+## 按任务阅读
+
+- 实时展示回答：[流式响应](/zh/api/guides/streaming)。
+- 让应用执行操作：[函数调用](/zh/api/guides/tool-calling)，并在服务端校验权限。
+- 提取机器可读数据：[结构化输出](/zh/api/guides/structured-output)。
+- 分析图片或建立检索：[视觉理解](/zh/api/guides/vision)、[向量化](/zh/api/guides/embeddings)。
+- 优化生产调用：[缓存](/zh/api/guides/prompt-caching)、[成本](/zh/api/guides/cost-management)、[限流](/zh/api/guides/rate-limits)。
+
+用户指南说明如何完成任务；[API 参考](/zh/reference)按协议查询参数、返回值与错误，两者不需要重复阅读。

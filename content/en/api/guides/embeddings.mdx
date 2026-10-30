@@ -1,0 +1,64 @@
+---
+title: "Embeddings and semantic retrieval"
+description: "Generate embeddings through Fenno API, compare vectors, build a retrieval pipeline and keep embedding model versions, dimensions and indexing consistent across documents and queries."
+---
+
+import { Callout } from 'nextra/components'
+
+# Embeddings and retrieval
+
+An embedding maps content to a numerical vector for similarity search, clustering or retrieval-augmented generation (RAG). Use an embedding model, not a chat model ID.
+
+## Generate and compare vectors
+
+Install `openai`; set `FENNO_API_KEY` and `FENNO_EMBEDDING_MODEL` to an available embedding model. This example compares two texts without an external vector database:
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    timeout=60.0,
+    max_retries=0,
+)
+import math
+
+result = client.embeddings.create(
+    model=os.environ["FENNO_EMBEDDING_MODEL"],
+    input=["A guide to database backups", "How to restore a database"],
+)
+vectors = [item.embedding for item in sorted(result.data, key=lambda item: item.index)]
+
+def cosine(a, b):
+    if len(a) != len(b):
+        raise ValueError("Embedding dimensions differ")
+    denominator = math.sqrt(sum(x * x for x in a) * sum(y * y for y in b))
+    return sum(x * y for x, y in zip(a, b)) / denominator if denominator else 0.0
+
+print("dimensions:", len(vectors[0]))
+print("similarity:", cosine(vectors[0], vectors[1]))
+```
+
+The similarity score is an example metric, not a universal relevance threshold. Calibrate retrieval against your own queries and labels.
+
+## Build a RAG pipeline
+
+1. Split source documents into useful chunks and keep source IDs and access-control metadata.
+2. Embed the chunks and store vectors together with the original text and model version.
+3. Embed each user query using the same model and compatible dimensions.
+4. Search for relevant chunks, apply access filters, then place the retrieved text into a chat prompt.
+5. Ask the language model to answer with source references; handle the case where nothing relevant is found.
+
+Retrieval and answer generation are separate requests with separate costs. A Fenno API key does not provide a hosted knowledge base or vector database by itself.
+
+## Keep the index consistent
+
+- Do not mix different embedding models or dimensions in one vector space. Re-embed when changing models.
+- For models supporting a `dimensions` option, use the same value for documents and queries. Do not assume every model accepts it.
+- Limit batch size and input length to the selected model's limits; splitting is an application responsibility.
+- Preserve response `index` ordering when matching vectors back to documents.
+- Avoid embedding secrets or documents that the requesting user is not allowed to retrieve.
+
+See the [Embeddings API](/en/reference/openai/embeddings), [LangChain](/en/api/integrations/langchain) and [LlamaIndex](/en/api/integrations/llamaindex).

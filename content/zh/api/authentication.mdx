@@ -28,7 +28,7 @@ import { Callout, Tabs } from 'nextra/components'
     ```
 
     <Callout type="info">
-      Anthropic SDK 的 `auth_token` 与 `api_key` 两种传参方式都支持，但同一请求不要同时携带。
+      本页 SDK 示例使用 `api_key`，对应 `x-api-key`。工具使用 `auth_token` 时，按该工具的接入指南核对，避免相互冲突的凭据设置。
     </Callout>
   </Tabs.Tab>
   <Tabs.Tab>
@@ -43,11 +43,12 @@ import { Callout, Tabs } from 'nextra/components'
 ## SDK 配置
 
 ```python
+import os
 from anthropic import Anthropic
 
 client = Anthropic(
     base_url="https://api.fenno.ai",
-    api_key="<FENNO_API_KEY>",
+    api_key=os.environ["FENNO_API_KEY"],
 )
 ```
 
@@ -62,23 +63,18 @@ const ai = new GoogleGenAI({
 
 ## Key 与权限
 
-- 一个账号可以创建多把 Key，便于区分环境（开发 / 预发 / 生产）或按业务线拆分用量。
-- Key 与账号的模型权限、额度绑定；权限变更后对已创建的 Key 立即生效。
-- Key 泄露时请立即在控制台删除并重新创建，删除后不可恢复。
+- 账户支持时，按环境或应用使用不同 Key。
+- 模型访问与限额取决于当前账户及 Key 配置；修改后通过实际请求验证，不预设固定的即时生效时间。
+- 密钥泄露时，使用控制台提供的吊销或轮换方式处理，并更新依赖应用，不要继续使用已泄露的值。
 
 ## 使用约束
 
 <Callout type="warning">
-  请勿在浏览器、移动端 App 等不可信环境中直接使用 Key。需要前端直连时，应由你自己的
-  服务端做鉴权与转发，或使用短时有效的临时凭证方案。
+  请勿在浏览器、移动端 App 等不可信环境中直接使用 Fenno Key。应由自己的服务端验证用户身份并转发获准请求；应用自己的会话凭据不等于 Fenno API Key。
 </Callout>
 
 ## 用量与配额
 
-请求会按模型记录 token 用量并实时扣减额度。你可以在控制台查看：
-
-- 按 Key / 模型 / 时间维度的用量明细；
-- 余额与限额状态；
-- 调用失败与限流记录。
+用量、余额与限额以当前账户实际提供的记录为准。响应返回的 `usage` 可用于应用统计，但缺少 usage 或 HTTP 失败本身不能证明没有费用。详见[用量与成本管理](/zh/api/guides/cost-management)。
 
 额度不足时请求会返回 `402` 或 `429`，具体见[错误与重试](/zh/api/errors)。

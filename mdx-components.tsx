@@ -3,6 +3,7 @@ import { Table } from 'nextra/components'
 import type { UseMDXComponents } from 'nextra/mdx-components'
 import type { ComponentProps } from 'react'
 import { LinkCard } from './components/link-card'
+import { IntegrationIcon } from './components/integration-icon'
 
 /**
  * Nextra 官方约定：先取 docs 主题的默认组件，再合并调用方传入的覆盖项。
@@ -18,7 +19,7 @@ function DocsTable({ className = '', ...props }: ComponentProps<'table'>) {
   )
 }
 
-const components = { ...docsComponents, table: DocsTable, LinkCard }
+const components = { ...docsComponents, table: DocsTable, LinkCard, IntegrationIcon }
 
 export const useMDXComponents: UseMDXComponents<typeof components> = <T,>(overrides?: T) => ({
   ...components,

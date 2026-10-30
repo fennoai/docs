@@ -1,0 +1,67 @@
+---
+title: "Image and document understanding"
+description: "Send image inputs to vision-capable Fenno models using base64 or accessible URLs, understand protocol-specific content blocks and validate file, privacy and document limits."
+---
+
+import { Callout } from 'nextra/components'
+
+# Image and document understanding
+
+A model that accepts text is not necessarily a vision model. Select a model with image-input support; PDF, image counts, resolution and file-size limits are separate capabilities.
+
+## Analyze a local image
+
+Install `openai`, set `FENNO_API_KEY` and a vision-capable `FENNO_MODEL`, and place a PNG named `input.png` beside your script:
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    timeout=60.0,
+    max_retries=0,
+)
+import base64
+from pathlib import Path
+
+encoded = base64.b64encode(Path("input.png").read_bytes()).decode("ascii")
+response = client.chat.completions.create(
+    model=os.environ["FENNO_MODEL"],
+    messages=[{"role": "user", "content": [
+        {"type": "text", "text": "Describe the image and note uncertain details."},
+        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{encoded}"}},
+    ]}],
+)
+print(response.choices[0].message.content)
+```
+
+Use a matching MIME type for JPEG or other supported formats. Base64 expands the payload; resize images to the detail actually needed before sending them.
+
+## URL inputs
+
+For an image reachable by the model service, replace the data URL with an HTTPS image URL in `image_url.url`. A URL accessible in your logged-in browser may still be inaccessible to the service. Avoid private intranet addresses, expiring links that expire too soon, and URLs containing secrets.
+
+Do not accept arbitrary remote URLs without validation in your own application. For sensitive material, review the data-handling requirements before sending it to any model service.
+
+## Other protocol formats
+
+| Protocol | Image representation | Important distinction |
+| --- | --- | --- |
+| Chat Completions | `image_url` content item | A text-only `content` string cannot carry the image |
+| Responses | `input_image` item with `image_url` | The enclosing message uses `input_text`, not Chat's `text` item |
+| Anthropic Messages | `image` block with a supported `source` | Base64 sources include `media_type` and `data` |
+| Gemini | `inlineData` part with `mimeType` and `data` | REST fields and SDK convenience helpers can differ |
+
+PDF support does not follow automatically from image support. Use the chosen model's document input format only after checking support; uploading a PDF to an unrelated file-storage endpoint is not a substitute.
+
+## Verify quality and limits
+
+- Begin with one small, non-sensitive test image before adding multiple pages or images.
+- Ask the model to identify uncertain text instead of guessing. Validate important OCR fields against the original.
+- Low-resolution text, rotated screenshots and dense tables can produce plausible but incorrect answers.
+- If a request fails, check the MIME type, decoded file content, payload size, model and protocol before retrying.
+- Image and document processing can consume additional tokens; see [cost management](/en/api/guides/cost-management).
+
+See the [model capability guide](/en/api/models), [Messages](/en/reference/anthropic/messages) and [Gemini content generation](/en/reference/gemini/generate-content).

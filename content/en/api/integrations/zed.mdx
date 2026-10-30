@@ -1,0 +1,60 @@
+---
+title: "Zed editor with Fenno API"
+description: "Add Fenno as a custom OpenAI-compatible LLM provider in Zed, configure api_url and available_models, store keys in the keychain and verify chat before Agent tools."
+---
+
+import { Callout } from 'nextra/components'
+
+# Zed
+
+[Zed](https://zed.dev) supports custom OpenAI-compatible providers. The current configuration uses `language_models.openai_compatible`; do not copy older provider formats without checking your installed version.
+
+## 1. Add a provider
+
+Open the command palette and run `agent: open settings`. In **LLM Providers**, choose **Add Provider** and enter a custom OpenAI-compatible provider:
+
+| Setting | Value |
+| --- | --- |
+| Provider ID | `fenno` |
+| API URL | `https://api.fenno.ai/v1` |
+| Model | Exact ID available to your Fenno account |
+| Context window | A verified budget within the model's supported context |
+
+## 2. Settings-file alternative
+
+Merge this section into your settings rather than replacing the whole file:
+
+```json
+{
+  "language_models": {
+    "openai_compatible": {
+      "fenno": {
+        "api_url": "https://api.fenno.ai/v1",
+        "available_models": [
+          {
+            "name": "<MODEL_ID>",
+            "display_name": "Fenno model",
+            "max_tokens": 8192
+          }
+        ]
+      }
+    }
+  }
+}
+```
+
+Replace `<MODEL_ID>`. `8192` is an example context budget for Zed, not a statement of the model's actual limit or an output-token setting. Adjust it to the chosen model and workload.
+
+## 3. Store the API key
+
+Enter your key in the provider settings UI; Zed stores it in the system keychain rather than `settings.json`. Alternatively, provider ID `fenno` maps to `FENNO_API_KEY` in the process environment. A non-empty environment variable can override a keychain value.
+
+A GUI application already running may not inherit a new shell export. Prefer the settings UI, or launch/restart Zed from the intended environment. Never add an `api_key` field with a secret to shared settings.
+
+## 4. Verify the selected model
+
+Select the Fenno provider/model in the Agent panel and start a new conversation with “Reply with OK only.” Check the actual account usage. Then test one safe tool call in a test project, leaving normal approval controls enabled.
+
+Capabilities such as tools and images must match the selected model. An option in Zed's UI cannot create an API capability. Zed-hosted models, subscriptions and other editor features are separate from your Fenno usage.
+
+For failures, check the selected provider, inherited credentials, exact ID and final `/v1/chat/completions` path. See [Zed's official API-access guide](https://zed.dev/docs/ai/use-api-access) and [tool troubleshooting](/en/api/integrations/others).

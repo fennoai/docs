@@ -1,0 +1,47 @@
+---
+title: "Messages 输入 token 计数"
+description: "查询 Fenno Messages count_tokens 端点，在生成前估算输入大小，区分估算、实际用量与账单，并处理模型或内容块不支持计数的情况。"
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# 输入 token 计数
+
+```http
+POST https://api.fenno.ai/v1/messages/count_tokens
+x-api-key: <FENNO_API_KEY>
+anthropic-version: 2023-06-01
+Content-Type: application/json
+```
+
+该端点只估算输入，不生成回答。可用性取决于模型与请求内容块，不保证所有 Messages 模型都能对所有输入类型计数。
+
+## 请求与响应
+
+发送计划使用的 `model` 和 `messages`；模型支持时，也应包含相关 `system` 与 `tools`，使估算接近真实请求。本计数示例不添加生成接口必填的 `max_tokens`。
+
+```python
+import os
+from anthropic import Anthropic
+
+client = Anthropic(
+    base_url="https://api.fenno.ai",
+    api_key=os.environ["FENNO_API_KEY"],
+)
+count = client.messages.count_tokens(
+    model=os.environ["FENNO_MODEL"],
+    messages=[{"role": "user", "content": "What is an API gateway?"}],
+)
+print(count.input_tokens)
+```
+
+响应包含 `input_tokens`，它不是输出 token 预测，也不是货币账单。实际生成、工具轮次与模型侧处理会改变最终总用量。
+
+## 安全使用估算结果
+
+- 在昂贵工作流开始前检查输入大小，同时给预期输出保留空间。
+- 模型或内容块不支持时应明确提示，不能伪造零用量。
+- 本地 tokenizer 只有在明确匹配模型与请求格式时才可能准确，否则只是近似。
+- 定价计算单独处理，实际用量应与可用账单记录核对。
+
+继续阅读 [Messages](/zh/reference/anthropic/messages)与[成本管理](/zh/api/guides/cost-management)。

@@ -7,14 +7,14 @@ import { Callout, Cards } from 'nextra/components'
 
 # Fenno API
 
-Fenno API is a unified AI model gateway: one API key for GPT, Claude, Gemini and other
-mainstream models, with native compatibility for the OpenAI, Anthropic and Gemini protocols. Most
-tools and SDKs only need a new `base_url` and `api_key`.
+Fenno API provides a common entry point for models available to your account through OpenAI-compatible,
+Anthropic Messages and Gemini protocols. Configure the endpoint, credentials and exact model ID,
+then verify the capabilities required by your application.
 
 <div className="fenno-hero">
   <span className="fenno-hero-badge">Fenno API · Three protocols</span>
-  <div className="fenno-hero-title">One key, every<span className="fenno-gradient-text"> mainstream model</span></div>
-  <p className="fenno-hero-desc">The same key serves Codex, Claude Code, Cursor, Cline and OpenCode as well as your own backend, with usage, quota and billing consolidated in one place.</p>
+  <div className="fenno-hero-title">One key,<span className="fenno-gradient-text"> multiple model choices</span></div>
+  <p className="fenno-hero-desc">Connect compatible coding tools and backend applications. Model access, supported features and usage depend on the selected model and your account.</p>
 </div>
 
 <Cards num={2}>
@@ -27,7 +27,7 @@ tools and SDKs only need a new `base_url` and `api_key`.
   <LinkCard title="Models & capabilities" href="/en/api/models">
     Reasoning, multimodal input, tool calls, structured output, prompt caching and image generation.
   </LinkCard>
-  <LinkCard title="API reference" href="/en/api/openai">
+  <LinkCard title="API reference" href="/en/reference">
     Chat Completions, Responses, Embeddings, image generation and more.
   </LinkCard>
 </Cards>
@@ -59,3 +59,13 @@ tools and SDKs only need a new `base_url` and `api_key`.
 - New to Fenno? Start with [Quickstart](/en/api/quickstart).
 - Already have a key? Read [Authentication](/en/api/authentication).
 - Debugging? See [Errors & retries](/en/api/errors).
+
+## Read by task
+
+- Render incremental answers: [streaming](/en/api/guides/streaming).
+- Execute application operations: [function calling](/en/api/guides/tool-calling), with server-side authorization.
+- Extract machine-readable data: [structured output](/en/api/guides/structured-output).
+- Analyze images or build retrieval: [vision](/en/api/guides/vision), [embeddings](/en/api/guides/embeddings).
+- Operate reliably: [caching](/en/api/guides/prompt-caching), [costs](/en/api/guides/cost-management), [rate limits](/en/api/guides/rate-limits).
+
+The guide explains complete tasks; the [API reference](/en/reference) looks up protocol fields, responses and errors without duplicating the tutorials.

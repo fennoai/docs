@@ -1,0 +1,42 @@
+---
+title: "模型 API 错误响应格式"
+description: "检查 Fenno 在 OpenAI、Anthropic 与 Gemini 协议下的错误封装，区分 HTTP 错误和流中失败，并结合状态、结构化错误码及可用请求 ID 排查。"
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# 错误响应格式
+
+下面展示常见协议错误封装，具体消息和可选字段可能不同。错误文本不是稳定的机器接口约定，请求格式错误与上游失败也可能使用不同字段。
+
+## OpenAI
+
+```json
+{"error": {"message": "Invalid API key", "type": "invalid_request_error", "code": "invalid_api_key"}}
+```
+
+## Anthropic Messages
+
+```json
+{"type": "error", "error": {"type": "authentication_error", "message": "Invalid API key"}}
+```
+
+## Gemini
+
+```json
+{"error": {"code": 400, "message": "Invalid argument", "status": "INVALID_ARGUMENT"}}
+```
+
+## HTTP 状态与可选信息
+
+常见状态包括请求无效的 `400`、鉴权失败的 `401`、访问限制的 `403`、路径或模型不存在的 `404`、额度不足的 `402`、限流或配额问题的 `429`，以及网关或上游异常的 `5xx`。应结合错误体判断；单次 model-not-found 错误不能证明模型长期不可用。
+
+服务返回请求／关联 ID 或 `Retry-After` 时可保留，但应用也要兼容缺失。`Retry-After` 可能是秒数或 HTTP 日期，不要假设所有路由都有相同的限流 Header。
+
+## 已开始流式输出后的错误
+
+SSE 可能先返回 HTTP `200`，随后才失败。必须处理协议错误事件和不完整终态；没有正常结束信号的网络 EOF，不能当成完整回答。
+
+解析前先检查内容类型，避免把上游 HTML 错误页交给 JSON 解析器。自行运营代理时，应保留安全状态与脱敏错误，不要暴露原始基础设施报错。
+
+恢复策略见[错误与重试](/zh/api/errors)，流事件处理见[流式响应](/zh/api/guides/streaming)。

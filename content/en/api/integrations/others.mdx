@@ -19,7 +19,7 @@ For tools without a dedicated guide, first check that they allow a custom API ad
 | --- | --- | --- | --- |
 | OpenAI Chat Completions | `https://api.fenno.ai/v1` | `/v1/chat/completions` | `Authorization: Bearer` |
 | OpenAI Responses | `https://api.fenno.ai/v1` | `/v1/responses` | `Authorization: Bearer` |
-| Anthropic Messages | `https://api.fenno.ai` | `/v1/messages` | Either `x-api-key` or Bearer |
+| Anthropic Messages | `https://api.fenno.ai` | `/v1/messages` | `x-api-key`; follow the dedicated guide for tool-specific authentication |
 | Gemini | `https://api.fenno.ai` | `/v1beta/models/{model}:generateContent` | `x-goog-api-key` |
 
 These base URLs assume the client appends the corresponding path. If it asks for a full endpoint, enter the complete request URL instead. Do not duplicate the version segment. See [authentication](/en/api/authentication).

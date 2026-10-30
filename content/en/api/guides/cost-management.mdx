@@ -1,0 +1,53 @@
+---
+title: "Usage tracking and cost management"
+description: "Track Fenno model usage by application and request, distinguish input, output, cache and image charges, and use budgets, bounded retries and verified billing records to control spend."
+---
+
+import { Callout } from 'nextra/components'
+
+# Usage and cost management
+
+Use the [Fenno console](https://api.fenno.ai) for the model prices and usage records available to your account. This guide explains how to reason about costs; it does not maintain a static price table or promise a particular console feature.
+
+## Understand the units
+
+| Workload | What to inspect |
+| --- | --- |
+| Text generation | Input and output tokens, including repeated conversation history |
+| Reasoning | Model-specific reasoning usage and how it is included in output totals |
+| Cached prompts | Cache reads, writes and their relationship to total input tokens |
+| Embeddings | Tokens embedded, including indexing and subsequent queries |
+| Images | Applicable per-image or model-specific usage units, size and quality |
+| Tool workflows | Every model round plus the cost of external tools |
+
+An HTTP response's token usage and a currency bill are different records. Do not infer a currency amount from `total_tokens` alone, and do not double-count cached or reasoning tokens already included in totals.
+
+## Estimate a workload
+
+For a simple text request without separate cache rates:
+
+```text
+estimated_cost = input_tokens / 1,000,000 * input_rate
+               + output_tokens / 1,000,000 * output_rate
+```
+
+Use rates in the same currency and billing unit. If caching or another unit has separate pricing, split the applicable categories according to the billing definitions first. Measure a representative workload instead of estimating from visible character counts.
+
+## Track safely
+
+Record an application-generated correlation ID, timestamp, model, endpoint, latency, completion state and usage when present. Associate keys with environments or applications where account controls allow it. Never log API keys, authorization headers or full private request bodies.
+
+For streams, usage may arrive only near completion or may be absent. Missing usage is not proof a request was free. Timeouts and canceled requests may already have consumed upstream work; reconcile against available billing records.
+
+## Control spend in the application
+
+- Set an output cap appropriate to the selected protocol and model.
+- Limit concurrency, queue length, retries, tool rounds and total task duration.
+- Retrieve relevant context instead of repeatedly sending an entire repository or knowledge base.
+- Test a lower-cost model against your own quality requirements before switching production traffic.
+- Add application budgets and alerts; do not assume an API key itself enforces your desired project budget.
+- Treat a model's context window as a limit, not a target input size.
+
+For billing discrepancies, provide a sanitized timestamp, model, correlation/request ID when available, and observed usage to [support](https://github.com/fennoai/docs/issues). Never attach credentials or customer prompts to a public issue.
+
+See [prompt caching](/en/api/guides/prompt-caching), [rate limits](/en/api/guides/rate-limits), and [errors](/en/api/errors).

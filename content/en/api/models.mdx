@@ -7,12 +7,13 @@ import { Callout, Cards } from 'nextra/components'
 
 # Models & Capabilities
 
-Fenno normalizes provider differences behind a unified protocol layer. You choose a model and a
-capability; auth, error codes and streaming formats are handled for you.
+Fenno reduces integration work through common API protocols. Each protocol still has its own
+authentication headers, request fields and stream events; use the reference for the endpoint you select.
 
 <Callout type="info">
   The authoritative model list lives in the console and changes as upstream providers open new
-  models. This page documents capabilities and calling conventions, not a static model catalog.
+  models. Every capability below requires support from the chosen model and route. This page
+  documents selection criteria, not a static model catalog or a universal feature guarantee.
 </Callout>
 
 ## Capability matrix
@@ -22,10 +23,10 @@ capability; auth, error codes and streaming formats are handled for you.
 | Text generation | Chat, completion, long-form writing, code | `/v1/chat/completions`, `/v1/responses`, `/v1/messages` |
 | Multimodal input | Images, PDFs and other content parts | same (array content) |
 | Tool calls | Function calling / tool use, parallel or multi-turn | same (`tools`) |
-| Structured output | JSON mode or JSON Schema (OpenAI-compatible requests only) | `/v1/chat/completions`, `/v1/responses` (`response_format`) |
-| Reasoning | Long thinking with token accounting | same (model or `reasoning` params) |
+| Structured output | Supported OpenAI-compatible models and requests | Chat uses `response_format`; Responses uses `text.format` |
+| Reasoning | Model-specific capability and budget | Chat, Responses and Messages use different reasoning fields |
 | Prompt caching | Reuse long prefixes to cut cost and latency | same (automatic or explicit markers) |
-| Streaming | SSE deltas, faster first token | same (`stream: true`) |
+| Streaming | Incremental output for real-time display | same (`stream: true`) |
 | Image generation | Text-to-image and image edits | `/v1/images/generations`, `/v1/images/edits` |
 | Embeddings | Vector representations | `/v1/embeddings` |
 
@@ -40,19 +41,19 @@ Identifiers are strings such as `gpt-*`, `claude-*` and `gemini-*`. Recommended 
 ## Choosing a protocol
 
 <Cards num={2}>
-  <LinkCard title="Existing OpenAI integration" href="/en/api/openai">
+  <LinkCard title="Existing OpenAI integration" href="/en/reference/openai">
     Change base_url and api_key; request and response shapes stay OpenAI-compatible.
   </LinkCard>
-  <LinkCard title="Claude Code / Anthropic SDK" href="/en/api/anthropic">
+  <LinkCard title="Claude Code / Anthropic SDK" href="/en/reference/anthropic">
     Use /v1/messages and keep Messages API content blocks.
   </LinkCard>
-  <LinkCard title="Gemini SDK / Gemini CLI" href="/en/api/gemini">
+  <LinkCard title="Gemini SDK / Gemini CLI" href="/en/reference/gemini">
     Use /v1beta/models/* with generateContent and streaming.
   </LinkCard>
 </Cards>
 
-## Billing
+## Billing and capability checks
 
-- Input, output and cache reads/writes are billed separately at console prices.
-- Images are billed per image; embeddings per input token.
-- Failed requests that consume no upstream tokens are not billed.
+Use current model pricing and billing definitions in your account. An HTTP failure or missing usage alone does not establish that a request was free. See [usage and costs](/en/api/guides/cost-management).
+
+Being listed does not establish support for every endpoint, image, tool or cache feature. Verify the intended workflow. [Model discovery](/en/reference/openai/models) finds IDs; it is not a full capability probe.

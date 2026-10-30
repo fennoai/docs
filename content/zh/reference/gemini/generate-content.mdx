@@ -1,0 +1,78 @@
+---
+title: "Gemini 内容生成与流式端点"
+description: "查询 Fenno Gemini generateContent 与 streamGenerateContent 的 contents、parts、生成设置、candidates、结束原因，以及 alt=sse 流式传输方式。"
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# Generate Content
+
+```http
+POST https://api.fenno.ai/v1beta/models/{model}:generateContent
+x-goog-api-key: <FENNO_API_KEY>
+Content-Type: application/json
+```
+
+使用实际支持 Gemini 协议的模型 ID。原始 URL 中的 `models/` 只能出现一次，模型查询返回的资源名可能已经包含这个前缀。
+
+## 请求字段
+
+| 字段 | 类型 | 含义 |
+| --- | --- | --- |
+| `contents` | array，必填 | 对话内容，一般包含 `role` 与 `parts` |
+| `contents[].parts[].text` | string | 文本输入 |
+| `contents[].parts[].inlineData` | object | 受支持的二进制输入，包含 `mimeType` 与 base64 `data` |
+| `systemInstruction` | object，可选 | 模型支持的系统指令 parts |
+| `generationConfig` | object，可选 | 支持的输出长度、采样及其他生成设置 |
+| `tools`、`toolConfig` | array / object，可选 | 仅使用模型支持的工具定义与控制方式 |
+
+多模态输入和可选参数都需要模型支持。不要假设 Google 托管的文件 URI 能在所有网关直接使用。
+
+## JavaScript SDK 示例
+
+安装 `@google/genai`，在服务端 Node.js 环境设置 `FENNO_API_KEY` 和 `FENNO_MODEL`：
+
+```ts
+import { GoogleGenAI } from '@google/genai'
+
+const ai = new GoogleGenAI({
+  apiKey: process.env.FENNO_API_KEY,
+  httpOptions: { baseUrl: 'https://api.fenno.ai' }
+})
+
+const response = await ai.models.generateContent({
+  model: process.env.FENNO_MODEL!,
+  contents: 'Explain what an API gateway does.'
+})
+console.log(response.text)
+```
+
+最小原始 JSON 请求体为：
+
+```json
+{"contents": [{"role": "user", "parts": [{"text": "Explain what an API gateway does."}]}]}
+```
+
+## 响应处理
+
+`candidates[]` 包含生成内容和结束信息，文本位于 `content.parts[]`。SDK 的 `response.text` 适合简单文本；原始 HTTP 客户端应检查 parts，不能假设结果只有一个字符串。
+
+检查返回的 `finishReason`、prompt 安全反馈和用量元信息。安全拦截或输出上限可能使回答不完整，单凭文本为空不能确定原因。函数调用是类型化 part，不是可直接执行的文本。
+
+## 流式生成
+
+REST SSE 使用 `POST /v1beta/models/{model}:streamGenerateContent?alt=sse`。SDK 将 `generateContent` 替换为：
+
+```ts
+const stream = await ai.models.generateContentStream({
+  model: process.env.FENNO_MODEL!,
+  contents: 'Explain what an API gateway does.'
+})
+for await (const chunk of stream) {
+  if (chunk.text) process.stdout.write(chunk.text)
+}
+```
+
+还应检查分片中的完成与安全状态；这个简短循环仅演示文本展示。不要在用户不知情的情况下重启已经交付部分内容的流。
+
+继续阅读[流式响应](/zh/api/guides/streaming)、[视觉输入](/zh/api/guides/vision)和[错误格式](/zh/reference/errors)。

@@ -1,0 +1,56 @@
+---
+title: "Rate limits and concurrency control"
+description: "Handle Fenno API rate limits with bounded concurrency, queues and Retry-After, distinguish temporary throttling from account restrictions, and avoid retry storms or multi-key bypasses."
+---
+
+import { Callout } from 'nextra/components'
+
+# Rate limits and concurrency
+
+Effective limits can depend on your account, model, route and upstream capacity. Do not copy another provider's fixed requests-per-minute or token quotas. Check the limits and access available to your account.
+
+## Recognize the failure
+
+| Observation | What to check |
+| --- | --- |
+| HTTP `429` | Error body, optional `Retry-After`, account limits and upstream capacity |
+| HTTP `402` or a quota error | Balance and spending limits; repeated retries do not add credit |
+| HTTP `401` or `403` | Credentials and access; backoff does not repair permissions |
+| HTTP `5xx` | Temporary service failure or upstream error; apply the bounded retry policy |
+
+Status alone may not distinguish every quota condition. Keep the sanitized error code and request ID when supplied. Not every upstream returns the same rate-limit headers.
+
+## Limit concurrency before sending
+
+Use a bounded queue and semaphore in your application. Choose a small initial concurrency, measure errors and latency, then adjust. Also limit output lengths: one very long generation can occupy capacity longer than several short ones.
+
+```python
+import asyncio
+
+semaphore = asyncio.Semaphore(4)  # Example application limit, not a Fenno quota.
+
+async def bounded_request(client, model, text):
+    async with semaphore:
+        return await client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": text}],
+        )
+```
+
+The example expects an `AsyncOpenAI` client configured with the Fenno base URL and credentials. Bound the number of queued jobs too; creating millions of waiting tasks is not effective backpressure.
+
+## Respect retry guidance
+
+If `Retry-After` is returned, it can be a number of seconds or an HTTP date. Wait accordingly only if it fits your remaining deadline; otherwise surface a retryable failure to the caller. Without that header, use capped exponential backoff with jitter and a small retry limit.
+
+Do not enable independent retry loops in your SDK, task runner and frontend at the same time. Their attempts multiply and can worsen overload.
+
+## Production checklist
+
+- Apply per-user limits so one customer cannot monopolize the queue.
+- Monitor queue wait, time to first output, total latency and throttling separately.
+- Only retry operations that are safe to replay; never restart a partially delivered stream invisibly.
+- Reduce unnecessary context or select another verified suitable model rather than inventing a gateway fallback parameter.
+- Request a limit review through support instead of using multiple keys to bypass restrictions.
+
+See the [retry example](/en/api/errors) and [streaming guide](/en/api/guides/streaming).

@@ -1,5 +1,6 @@
 export default {
   '*': { theme: { timestamp: false } },
-  api: { title: 'Fenno API (Models)', type: 'page' },
-  ai: { title: 'FennoAI (Agent)', type: 'page' }
+  api: { title: 'Model Guide', type: 'page' },
+  ai: { title: 'Agent Guide', type: 'page' },
+  reference: { title: 'Model API Reference', type: 'page' }
 }

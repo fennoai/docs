@@ -1,0 +1,78 @@
+---
+title: "Gemini Generate Content and streaming"
+description: "Reference Fenno Gemini generateContent and streamGenerateContent, including contents, parts, generation settings, candidates, finish reasons and the SSE alt=sse transport."
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# Generate Content
+
+```http
+POST https://api.fenno.ai/v1beta/models/{model}:generateContent
+x-goog-api-key: <FENNO_API_KEY>
+Content-Type: application/json
+```
+
+Use the selected Gemini-compatible model ID. In a raw URL, add the `models/` path segment only once; a discovery resource name may already include it.
+
+## Request fields
+
+| Field | Type | Meaning |
+| --- | --- | --- |
+| `contents` | array, required | Conversation content, usually `role` plus `parts` |
+| `contents[].parts[].text` | string | Text input |
+| `contents[].parts[].inlineData` | object | Supported inline binary input with `mimeType` and base64 `data` |
+| `systemInstruction` | object, optional | Model-supported system instruction parts |
+| `generationConfig` | object, optional | Supported output length, sampling and other generation controls |
+| `tools`, `toolConfig` | array / object, optional | Only tool definitions and behavior supported by the model |
+
+Model support is required for multimodal inputs and optional settings. Do not assume a Google-hosted file URI is usable through every gateway.
+
+## JavaScript SDK example
+
+Install `@google/genai`; set `FENNO_API_KEY` and `FENNO_MODEL` in a server-side Node.js environment:
+
+```ts
+import { GoogleGenAI } from '@google/genai'
+
+const ai = new GoogleGenAI({
+  apiKey: process.env.FENNO_API_KEY,
+  httpOptions: { baseUrl: 'https://api.fenno.ai' }
+})
+
+const response = await ai.models.generateContent({
+  model: process.env.FENNO_MODEL!,
+  contents: 'Explain what an API gateway does.'
+})
+console.log(response.text)
+```
+
+For a minimal raw JSON body:
+
+```json
+{"contents": [{"role": "user", "parts": [{"text": "Explain what an API gateway does."}]}]}
+```
+
+## Response handling
+
+`candidates[]` contains generated content and finish information; text lives in `content.parts[]`. The SDK `response.text` helper is convenient for simple text, but raw clients should inspect the parts rather than assuming one string.
+
+Check candidate `finishReason`, prompt safety feedback and usage metadata when returned. A blocked prompt or output limit may yield no complete answer; an empty text value alone does not identify the cause. Function calls are typed parts, not text to execute.
+
+## Streaming
+
+For REST SSE, use `POST /v1beta/models/{model}:streamGenerateContent?alt=sse`. For the SDK, replace `generateContent` with:
+
+```ts
+const stream = await ai.models.generateContentStream({
+  model: process.env.FENNO_MODEL!,
+  contents: 'Explain what an API gateway does.'
+})
+for await (const chunk of stream) {
+  if (chunk.text) process.stdout.write(chunk.text)
+}
+```
+
+Inspect completion/safety states in the chunks as well; this compact loop only illustrates text rendering. Do not restart a partially delivered stream without telling the caller.
+
+See [streaming](/en/api/guides/streaming), [vision](/en/api/guides/vision) and [error formats](/en/reference/errors).

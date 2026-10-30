@@ -14,18 +14,19 @@ import { Callout, Steps, Tabs } from 'nextra/components'
 ### 创建 API Key
 
 1. 登录 [Fenno API 控制台](https://api.fenno.ai)。
-2. 进入 **设置 → API Keys**，点击 **创建新密钥**。
-3. 复制并妥善保存。Key 只在创建时完整展示一次。
+2. 打开控制台的 API Key／密钥管理区域，按实际界面创建密钥。
+3. 按界面提示妥善保存，不要假设之后仍能查看完整值。
 
 <Callout type="warning">
   不要把 Key 提交到仓库或写进前端代码。服务端使用时请通过环境变量注入，例如
   `FENNO_API_KEY`。
 </Callout>
 
-在运行下方示例的 Shell 中导出这个 Key：
+在运行下方示例的 Shell 中导出 Key 和实际可用的 Chat Completions 模型 ID。替换两个占位值；精确模型 ID 可从控制台或[模型查询](/zh/reference/openai/models)获取。
 
 ```bash
 export FENNO_API_KEY="<your-api-key>"
+export FENNO_MODEL="<your-model-id>"
 ```
 
 ### 配置 Base URL
@@ -44,10 +45,12 @@ export FENNO_API_KEY="<your-api-key>"
     curl https://api.fenno.ai/v1/chat/completions \
       -H "Authorization: Bearer $FENNO_API_KEY" \
       -H "Content-Type: application/json" \
-      -d '{
-        "model": "gpt-4o-mini",
+      --data-binary @- <<JSON
+      {
+        "model": "$FENNO_MODEL",
         "messages": [{"role": "user", "content": "用一句话解释什么是统一 API 网关"}]
-      }'
+      }
+    JSON
     ```
   </Tabs.Tab>
   <Tabs.Tab>
@@ -61,7 +64,7 @@ export FENNO_API_KEY="<your-api-key>"
     )
 
     resp = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model=os.environ["FENNO_MODEL"],
         messages=[{"role": "user", "content": "用一句话解释什么是统一 API 网关"}],
     )
     print(resp.choices[0].message.content)
@@ -77,7 +80,7 @@ export FENNO_API_KEY="<your-api-key>"
     })
 
     const resp = await client.chat.completions.create({
-      model: 'gpt-4o-mini',
+      model: process.env.FENNO_MODEL!,
       messages: [{ role: 'user', content: '用一句话解释什么是统一 API 网关' }]
     })
     console.log(resp.choices[0].message.content)

@@ -19,7 +19,7 @@ import { Callout } from 'nextra/components'
 | --- | --- | --- | --- |
 | OpenAI Chat Completions | `https://api.fenno.ai/v1` | `/v1/chat/completions` | `Authorization: Bearer` |
 | OpenAI Responses | `https://api.fenno.ai/v1` | `/v1/responses` | `Authorization: Bearer` |
-| Anthropic Messages | `https://api.fenno.ai` | `/v1/messages` | `x-api-key` 或 Bearer，选择一种 |
+| Anthropic Messages | `https://api.fenno.ai` | `/v1/messages` | `x-api-key`；工具专用认证按对应接入指南配置 |
 | Gemini | `https://api.fenno.ai` | `/v1beta/models/{model}:generateContent` | `x-goog-api-key` |
 
 表中的基础地址适用于自动追加相应路径的客户端。如果工具要求完整 Endpoint，填写完整请求地址；不要重复追加版本号。协议细节见[鉴权](/zh/api/authentication)。

@@ -1,13 +1,11 @@
 export default {
   index: 'Overview',
   quickstart: 'Quickstart',
-  authentication: 'Authentication',
-  models: 'Models & Capabilities',
-  '---api': { type: 'separator' },
-  openai: 'OpenAI Compatible',
-  anthropic: 'Anthropic Native',
-  gemini: 'Gemini Native',
-  errors: 'Errors & Retries',
+  authentication: 'API keys and authentication',
+  models: 'Models and capabilities',
   '---integrations': { type: 'separator' },
-  integrations: 'Tool integrations'
+  integrations: 'Integrations',
+  '---guides': { type: 'separator', title: 'Capabilities and workflows' },
+  guides: 'Model workflows',
+  errors: 'Errors, timeouts and retries'
 }

@@ -1,0 +1,37 @@
+---
+title: "Gemini model-resource discovery"
+description: "Reference Fenno Gemini model list and retrieval paths, preserve resource-name prefixes correctly, inspect generation methods when returned, and handle changing availability or optional pagination."
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# Gemini model resources
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| GET | `/v1beta/models` | List Gemini-protocol model resources |
+| GET | `/v1beta/models/{model}` | Retrieve one resource |
+
+Use `https://api.fenno.ai` and `x-goog-api-key: <FENNO_API_KEY>`.
+
+## List request
+
+```bash
+curl https://api.fenno.ai/v1beta/models   -H "x-goog-api-key: $FENNO_API_KEY"
+```
+
+The response contains `models[]`. When provided, a resource can include `name`, `displayName`, token limits and `supportedGenerationMethods`. Treat missing capability fields as unknown rather than inventing defaults.
+
+If a paginated response returns `nextPageToken`, use supported `pageToken` and `pageSize` parameters to continue. Do not assume either pagination or its maximum page size is identical across routes.
+
+## Resource names
+
+A name can look like `models/<MODEL_ID>`. When creating a raw URL, append that complete name after `/v1beta/`, or remove the single `models/` prefix before inserting it into `/v1beta/models/{model}`. Do not produce `/models/models/...`.
+
+The Google GenAI SDK accepts a model ID or a supported `models/...` resource name. Use the exact available identifier rather than adding another provider's model-family prefix.
+
+## Availability and capabilities
+
+Discovery is a starting point, not proof that every optional feature, tool or modality will work. Verify `generateContent` and any required streaming or vision behavior with a small request under the intended credentials.
+
+See [Generate Content](/en/reference/gemini/generate-content) and [Gemini CLI setup](/en/api/integrations/gemini-cli).

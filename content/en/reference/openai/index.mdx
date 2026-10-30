@@ -1,0 +1,37 @@
+---
+title: "OpenAI-compatible API overview"
+description: "Find Fenno's OpenAI-compatible endpoint paths for Chat Completions, Responses, embeddings, images and models, with base URL, authentication and feature compatibility boundaries."
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# OpenAI-compatible API
+
+Use `https://api.fenno.ai/v1` as the OpenAI SDK base URL and pass your Fenno key explicitly. Raw HTTP paths below already contain `/v1`; do not append it twice.
+
+| Method | Full path | Reference |
+| --- | --- | --- |
+| POST | `/v1/chat/completions` | [Chat Completions](/en/reference/openai/chat-completions) |
+| POST | `/v1/responses` | [Responses](/en/reference/openai/responses) |
+| POST | `/v1/embeddings` | [Embeddings](/en/reference/openai/embeddings) |
+| POST | `/v1/images/generations` | [Images](/en/reference/openai/images) |
+| POST | `/v1/images/edits` | [Images](/en/reference/openai/images) |
+| GET | `/v1/models` | [Model discovery](/en/reference/openai/models) |
+| GET | `/v1/models/{model}` | [Model discovery](/en/reference/openai/models) |
+
+## Authentication
+
+```http
+Authorization: Bearer <FENNO_API_KEY>
+Content-Type: application/json
+```
+
+Image uploads use multipart form data instead of JSON.
+
+## Choose the conversation API
+
+Chat Completions accepts `messages` and returns `choices`. Responses accepts `input` and returns typed `output` items. Their tool definitions, output limits, JSON-schema fields and streaming events are not interchangeable.
+
+Protocol compatibility does not imply support for every official OpenAI service or model option. Do not assume hosted tools, persistent response retrieval, background jobs or file APIs are available because an SDK exposes those methods.
+
+See [OpenAI SDK setup](/en/api/integrations/openai-sdk), [structured output](/en/api/guides/structured-output), and [official API documentation](https://developers.openai.com/api/reference).

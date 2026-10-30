@@ -1,0 +1,63 @@
+---
+title: "Images generation and editing endpoints"
+description: "Reference Fenno image generation and multipart editing endpoints, model-specific size and quality options, URL or base64 output and safe image-file handling."
+---
+
+import { Callout, Cards } from 'nextra/components'
+
+# Images API
+
+| Operation | Method and path | Content type |
+| --- | --- | --- |
+| Generate | `POST /v1/images/generations` | JSON |
+| Edit | `POST /v1/images/edits` | Multipart form data |
+
+Both use the host `https://api.fenno.ai` and Bearer authentication. Select an image model that supports the specific operation.
+
+## Generation parameters
+
+`model` and `prompt` select the model and task. Optional `size`, `quality`, `n`, output-format controls and related fields are model-specific. Do not send values copied from a different image family without checking support.
+
+Install `openai`, set `FENNO_API_KEY` and `FENNO_IMAGE_MODEL`:
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    timeout=60.0,
+    max_retries=0,
+)
+
+generated = client.images.generate(
+    model=os.environ["FENNO_IMAGE_MODEL"],
+    prompt="A lighthouse on a rocky coast, watercolor, no text.",
+)
+print("Returned images:", len(generated.data))
+```
+
+## Edit parameters
+
+Send a supported `image` file, `model` and `prompt`. A `mask` and other editing options are only meaningful where the selected model supports them; mask dimensions, alpha semantics and file restrictions can differ.
+
+```python
+with open("input.png", "rb") as image:
+    edited = client.images.edit(
+        model=os.environ["FENNO_IMAGE_MODEL"],
+        image=image,
+        prompt="Keep the subject and replace the background with a beach.",
+    )
+print("Returned images:", len(edited.data))
+```
+
+Do not manually set a JSON content type for multipart uploads. Let the HTTP client create the boundary.
+
+## Response and errors
+
+`data[]` can contain `url` or `b64_json` according to the model and supported response format. Additional usage or revised-prompt fields are not universal. Do not treat a missing URL as failure before checking for base64 output.
+
+For a `400`, inspect image format, payload size, dimensions, prompt and optional parameters. A `404` can also indicate an incorrect path or unavailable model; repeated retries do not fix unsupported editing.
+
+See [image generation and editing](/en/api/guides/image-generation) for handling results and [error formats](/en/reference/errors).

@@ -1,0 +1,56 @@
+---
+title: "速率限制与并发控制"
+description: "通过有界并发、请求队列和 Retry-After 处理 Fenno API 限流，区分临时拥塞、额度与权限问题，避免多层重试放大流量。"
+---
+
+import { Callout } from 'nextra/components'
+
+# 速率限制与并发
+
+实际限制可能与账号、模型、路由和上游容量有关。不要照用其他服务商固定的每分钟请求数或 token 配额，应检查当前账户可用的限制与访问权限。
+
+## 先识别失败类型
+
+| 现象 | 检查方向 |
+| --- | --- |
+| HTTP `429` | 错误体、可选的 `Retry-After`、账户限制与上游容量 |
+| HTTP `402` 或额度错误 | 余额及支出限制，反复重试不能增加额度 |
+| HTTP `401` 或 `403` | 密钥与权限，退避不能修复鉴权问题 |
+| HTTP `5xx` | 临时服务或上游异常，按有界策略决定是否重试 |
+
+仅凭状态码不一定能区分所有配额情况。保留脱敏错误码与服务返回的请求 ID；不同上游不保证返回相同的限流 Header。
+
+## 发送前限制并发
+
+在应用中使用有界队列和信号量。先从小并发开始，观察错误与延迟，再做调整；同时限制输出长度，长生成会占用更久的容量。
+
+```python
+import asyncio
+
+semaphore = asyncio.Semaphore(4)  # Example application limit, not a Fenno quota.
+
+async def bounded_request(client, model, text):
+    async with semaphore:
+        return await client.chat.completions.create(
+            model=model,
+            messages=[{"role": "user", "content": text}],
+        )
+```
+
+示例中的 `client` 应是已配置 Fenno 地址与密钥的 `AsyncOpenAI`。还要限制待处理任务数量，不能通过创建海量等待任务来代替背压。
+
+## 遵守重试提示
+
+返回 `Retry-After` 时，它可能是等待秒数，也可能是 HTTP 日期。只有等待时间不超过任务剩余期限时才继续等待，否则应向调用方返回可重试失败。没有该 Header 时，使用带抖动的指数退避、等待上限和较小的重试次数。
+
+不要同时在 SDK、任务执行器和前端开启各自独立的重试循环，尝试次数会相乘，反而加剧拥塞。
+
+## 生产接入检查
+
+- 按用户限制流量，避免单个用户占满队列。
+- 分别监控排队时间、首个输出耗时、总耗时与限流率。
+- 只重试可安全重放的操作，不要悄悄重启已经展示部分内容的流。
+- 减少不必要上下文，或选择已验证适用的其他模型，不要臆造网关回退参数。
+- 需要更高额度时联系支持，不要使用多 Key 绕过限制。
+
+继续阅读[重试示例](/zh/api/errors)与[流式响应](/zh/api/guides/streaming)。

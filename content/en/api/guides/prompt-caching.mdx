@@ -1,0 +1,68 @@
+---
+title: "Prompt caching and reusable context"
+description: "Organize stable prompt prefixes for Fenno models, distinguish automatic and explicit caching, and verify cache usage without assuming universal thresholds, retention periods or discounts."
+---
+
+import { Callout } from 'nextra/components'
+
+# Prompt caching
+
+Prompt caching can reduce repeated processing of the same input prefix on supported models and routes. It is not an answer cache: a repeated prompt can still produce a different answer and incur output usage.
+
+## Arrange stable prefixes
+
+Put reusable instructions, tool definitions and reference material before per-request questions. Keep their order and content stable. Timestamps, random IDs or user-specific text near the beginning can prevent useful prefix reuse.
+
+Use separate authorized context for each tenant. Never broaden access to private material merely to increase cache hits.
+
+## Automatic versus explicit caching
+
+| Mode | Application action | What must be verified |
+| --- | --- | --- |
+| Automatic prefix caching | Reuse an identical supported prefix | Model, route, minimum eligible input and hit counters |
+| Anthropic-style explicit caching | Add supported `cache_control` markers | Selected model's marker and prefix support |
+
+The following example is only for a Messages model and route that explicitly support `cache_control`. Install `anthropic`, set `FENNO_API_KEY`, `FENNO_MODEL` and `FENNO_REFERENCE_TEXT` to your own reusable reference text:
+
+```python
+import os
+from anthropic import Anthropic
+
+client = Anthropic(
+    base_url="https://api.fenno.ai",
+    api_key=os.environ["FENNO_API_KEY"],
+    max_retries=0,
+)
+response = client.messages.create(
+    model=os.environ["FENNO_MODEL"],
+    max_tokens=256,
+    system=[{
+        "type": "text",
+        "text": "You are a support assistant. " + os.environ["FENNO_REFERENCE_TEXT"],
+        "cache_control": {"type": "ephemeral"},
+    }],
+    messages=[{"role": "user", "content": "Summarize the support rules."}],
+)
+print(response.usage)
+```
+
+A short test prefix may be ineligible for caching. Adding a marker does not itself prove a cache was written or read. This guide does not imply support for a separate Gemini `cachedContents` management API.
+
+## Verify actual usage
+
+| Protocol | Possible usage fields, when returned |
+| --- | --- |
+| Chat Completions | `usage.prompt_tokens_details.cached_tokens` |
+| Responses | `usage.input_tokens_details.cached_tokens` |
+| Messages | `usage.cache_read_input_tokens`, `usage.cache_creation_input_tokens` |
+
+Missing fields are not evidence of a hit. Compare eligible repeated requests and inspect your usage records. Do not assert a fixed retention period, minimum prefix length or discount across all providers.
+
+## Cost and operational boundaries
+
+- Cached input can remain part of reported input-token totals; do not subtract it twice when estimating cost.
+- Cache reads, writes and ordinary input may have different rates. Use the applicable Fenno billing detail rather than another provider's examples.
+- Do not rely on a cache as persistent conversation storage or a data-retention promise.
+- If a model rejects a cache field, remove it or choose a verified compatible model instead of switching to unrelated provider-specific parameters.
+
+See [cost management](/en/api/guides/cost-management) and [Messages](/en/reference/anthropic/messages).

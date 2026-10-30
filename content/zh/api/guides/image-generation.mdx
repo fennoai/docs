@@ -1,0 +1,75 @@
+---
+title: "图像生成与编辑指南"
+description: "使用 Fenno 图像模型完成生成和改图，核对模型参数、文件格式和端点支持，分别处理 URL 与 base64 结果，避免套用其他模型的限制。"
+---
+
+import { Callout } from 'nextra/components'
+
+# 图像生成与编辑
+
+先选择可用图像模型，并确认它支持的端点。部分多模态模型通过原生内容生成协议返回图片，而不是 OpenAI Images API；本页介绍后者。
+
+## 生成一张图片
+
+安装 `openai`，设置 `FENNO_API_KEY` 和 `FENNO_IMAGE_MODEL` 后运行：
+
+```python
+import os
+from openai import OpenAI
+
+client = OpenAI(
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    timeout=60.0,
+    max_retries=0,
+)
+
+response = client.images.generate(
+    model=os.environ["FENNO_IMAGE_MODEL"],
+    prompt="A small lighthouse on a rocky coast, watercolor illustration, no text.",
+)
+for image in response.data:
+    if image.url:
+        print("Image URL:", image.url)
+    elif image.b64_json:
+        print("Received base64 image data")
+```
+
+不同模型和输出选项可能返回 URL 或 base64。如果 URL 有时效，应及时保存需要的结果。不要把完整 base64 或带签名的图片地址输出到共享日志。
+
+## 编辑本地图片
+
+沿用同一个 `client`，准备模型支持的本地图片文件；所选模型必须支持编辑端点：
+
+```python
+with open("input.png", "rb") as image:
+    edited = client.images.edit(
+        model=os.environ["FENNO_IMAGE_MODEL"],
+        image=image,
+        prompt="Keep the subject unchanged and replace the background with a beach.",
+    )
+print("Returned images:", len(edited.data))
+```
+
+SDK 会发送 multipart 表单。使用 cURL 时，应由 cURL 生成表单边界，不要给上传图片的请求手动添加 `Content-Type: application/json`。
+
+## 按模型检查选项
+
+| 选项 | 发送前确认 |
+| --- | --- |
+| `size` | 支持的像素尺寸或画幅比例 |
+| `quality` | 可用质量档位及其计费影响 |
+| `n` | 是否支持一次生成多张 |
+| 原图或蒙版 | 支持格式、大小限制与蒙版语义 |
+| 输出格式 | 返回 URL、base64 及其他格式选项 |
+
+先只发送 `model` 和 `prompt`，再逐项增加模型明确支持的参数。聊天请求成功，不代表该模型也能生成或编辑图片。
+
+## 质量、权利与隐私
+
+- 清楚描述主体、风格和约束，不要假设模型能准确排版或生成所有文字。
+- 发布前检查输出；生成成功不代表事实正确，也不代表获得品牌或肖像使用许可。
+- 只上传有权处理的图片，私有素材不要使用公开链接。
+- 生成请求超时后仍可能产生用量，不要无限重复创建请求。
+
+继续阅读 [Images API](/zh/reference/openai/images)与[成本管理](/zh/api/guides/cost-management)。

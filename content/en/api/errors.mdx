@@ -1,95 +1,96 @@
 ---
-title: "API errors and retries"
-description: "Diagnose Fenno API authentication, model, quota and timeout errors. Read HTTP status codes and apply safe retry strategies without duplicate requests."
+title: "API errors, timeouts and safe retries"
+description: "Diagnose Fenno API authentication, model, quota and upstream failures, apply bounded Retry-After-aware retries, and preserve partial streams and side-effecting tool operations."
 ---
 
 import { Callout } from 'nextra/components'
 
-# Errors & Retries
+# Errors, timeouts and retries
 
-## Error shapes
+First identify whether a failure comes from authentication, request format, account limits, the selected model, or the network. Repeating the same invalid request does not fix it. Exact error envelopes are documented in the [API error reference](/en/reference/errors).
 
-OpenAI-compatible endpoints:
+## Decide what to retry
 
-```json
-{
-  "error": {
-    "message": "Invalid API key",
-    "type": "invalid_request_error",
-    "code": "invalid_api_key"
-  }
-}
-```
+| Status or condition | Recommended action |
+| --- | --- |
+| `400` | Correct parameters, protocol, model capability or input size |
+| `401` | Check credentials and conflicting authentication settings |
+| `403` | Check access or policy restrictions; do not bypass them |
+| `404` | Verify the assembled endpoint and exact model ID |
+| `402` or quota exhausted | Check credit or limits before another request |
+| `429` | Inspect the error and optional retry guidance; reduce concurrency |
+| `408`, connection reset or timeout | Outcome may be unknown; check replay safety before retrying |
+| `5xx` | A bounded retry may be appropriate; avoid retry storms |
 
-Anthropic endpoints:
+## A bounded non-streaming example
 
-```json
-{
-  "type": "error",
-  "error": { "type": "authentication_error", "message": "invalid x-api-key" }
-}
-```
-
-Gemini endpoints:
-
-```json
-{
-  "error": {
-    "code": 400,
-    "message": "API key not valid",
-    "status": "INVALID_ARGUMENT"
-  }
-}
-```
-
-## Status codes
-
-| Status | Meaning | Retry? |
-| --- | --- | --- |
-| `400` | Invalid request | No — fix the request |
-| `401` | Key invalid, deleted or disabled | No — check the key |
-| `403` | Model not permitted or blocked by policy | No |
-| `404` | Unknown path or model | No — check base URL and model id |
-| `402` | Quota exhausted | No — top up or adjust limits |
-| `408` | Upstream timeout | Yes |
-| `429` | Rate limited | Yes, with backoff |
-| `5xx` | Upstream or gateway error | Yes |
-
-<Callout type="info">
-  Only retry requests that are safe to replay. Once a streaming response has emitted content, a
-  retry can duplicate output — retry before the first token only.
-</Callout>
-
-## Backoff
-
-Exponential backoff with jitter:
+This Python example deliberately retries only selected HTTP status failures on a simple text request. It disables SDK retries so attempts do not multiply. Install `openai`, set `FENNO_API_KEY` and `FENNO_MODEL`, then run:
 
 ```python
-import random, time
+import os
+from openai import OpenAI
 
-def backoff(attempt: int) -> float:
-    base = min(2 ** attempt, 30)
-    return base * (0.5 + random.random() / 2)
+client = OpenAI(
+    base_url="https://api.fenno.ai/v1",
+    api_key=os.environ["FENNO_API_KEY"],
+    timeout=60.0,
+    max_retries=0,
+)
+import random
+import time
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
+from openai import APIStatusError
 
-for attempt in range(5):
+def retry_delay(value, attempt):
+    if value:
+        try:
+            return max(0.0, float(value))
+        except ValueError:
+            try:
+                date = parsedate_to_datetime(value)
+                return max(0.0, (date - datetime.now(timezone.utc)).total_seconds())
+            except (TypeError, ValueError, OverflowError):
+                pass
+    return min(2 ** attempt, 8) * random.uniform(0.5, 1.0)
+
+deadline = time.monotonic() + 60
+for attempt in range(3):
+    remaining = deadline - time.monotonic()
+    if remaining <= 0:
+        raise TimeoutError("Application deadline exceeded")
     try:
-        resp = call()
+        response = client.with_options(timeout=min(remaining, 20)).chat.completions.create(
+            model=os.environ["FENNO_MODEL"],
+            messages=[{"role": "user", "content": "Reply with OK."}],
+        )
+        print(response.choices[0].message.content)
         break
-    except RetryableError:
-        if attempt == 4:
+    except APIStatusError as error:
+        if error.status_code not in {429, 500, 502, 503, 504} or attempt == 2:
             raise
-        time.sleep(backoff(attempt))
+        wait = retry_delay(error.response.headers.get("retry-after"), attempt)
+        if wait > 30 or wait >= deadline - time.monotonic():
+            raise
+        time.sleep(wait)
 ```
 
-## Rate limits
+The time budget bounds application-level attempts and waits; a transport timeout is not a strict wall-clock guarantee. Connection errors and ambiguous timeouts intentionally propagate instead of being retried automatically. Even a failed generation may have consumed usage; decide whether replay is acceptable for your application.
 
-- Limits apply per account, key and model.
-- Response headers report remaining quota and reset times when upstream exposes them — read them
-  instead of retrying blindly.
-- Need more concurrency? Contact support; do not work around limits with extra keys.
+## Streaming and side effects
 
-## Debugging checklist
+<Callout type="warning">
+  After output has reached the user, do not silently restart and append a new generation. After a tool has performed a side effect, do not replay it merely because the model response was interrupted. Use explicit confirmation and application-level deduplication.
+</Callout>
 
-1. Reproduce with `curl` to rule out SDK issues.
-2. Verify the version prefix (`/v1` for OpenAI, `/v1beta` for Gemini).
-3. Log request IDs and status codes for support tickets.
+Treat `response.incomplete`, an unfinished Messages block, or a stream without its protocol completion signal as partial rather than successful. See [streaming](/en/api/guides/streaming).
+
+## Diagnose before escalating
+
+1. Reproduce with a small non-sensitive input and the correct protocol endpoint.
+2. Check the exact model ID and assembled URL; OpenAI clients normally include `/v1` in the base URL, while native Anthropic and Gemini clients use the host.
+3. Compare client, application, proxy and upstream timeout settings.
+4. Record timestamp, endpoint, model, status, sanitized error code and request ID when provided.
+5. Contact support without attaching API keys, authorization headers or private prompts to a public issue.
+
+See [authentication](/en/api/authentication), [rate limits](/en/api/guides/rate-limits), and [cost management](/en/api/guides/cost-management).
